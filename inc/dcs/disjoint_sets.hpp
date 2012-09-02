@@ -85,7 +85,7 @@ Vertex find_representative_with_full_compression(ParentPA parent, Vertex v)
 struct find_with_path_halving
 {
 	template <class ParentPA, class Vertex>
-	Vertex operator()(ParentPA p, Vertex v)
+	Vertex operator()(ParentPA p, Vertex v) const
 	{
 		return detail::find_representative_with_path_halving(p, v);
 	}
@@ -94,7 +94,7 @@ struct find_with_path_halving
 struct find_with_full_path_compression
 {
 	template <class ParentPA, class Vertex>
-	Vertex operator()(ParentPA p, Vertex v)
+	Vertex operator()(ParentPA p, Vertex v) const
 	{
 		return detail::find_representative_with_full_compression(p, v);
 	}
@@ -125,7 +125,7 @@ class disjoint_sets
 
 	}
 
-	public: size_type find_set(element_type const& e)
+	public: size_type find_set(element_type const& e) const
 	{
 		return finder_(parents_, id_map_.at(hash_(e)));
 	}
