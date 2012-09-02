@@ -44,7 +44,7 @@ struct close_to: ::std::binary_function <T,T,bool>
 
 	bool operator()(T const& x, T const& y) const
     {
-		return (::std::fabs(x-y) <= tol_);
+		return (::std::abs(x-y) <= tol_);
 	}
 
 	bool operator()(T const& x, T const& y, T const& tol) const
