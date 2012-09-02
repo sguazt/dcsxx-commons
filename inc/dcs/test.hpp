@@ -24,39 +24,44 @@
  *
  * int main()
  * {
- *   DCS_TEST_SUITE("My Test Suite"); // optional
+ *   DCS_TEST_SUITE( "My Test Suite" ); // optional
+ *
  *   DCS_TEST_BEGIN()
- *
- *   DCS_TEST_DO( test_case_1 );
- *   DCS_TEST_DO( test_case_2 );
- *   // ...
- *   DCS_TEST_DO( test_case_n );
- *
+ *     DCS_TEST_DO( test_case_1 );
+ *     DCS_TEST_DO( test_case_2 );
+ *     // ...
+ *     DCS_TEST_DO( test_case_n );
  *   DCS_TEST_END()
  * }
  * </pre>
+ * Inside each <em>test_case_<code>k</code></em> you can use the various
+ * \c DCS_TEST* macros.
  *
- * To compile, make sure to add to the linker the standard math library.
+ * \note To compile, make sure to add to the linker the standard math library.
  *
+ * <hr/>
  *
- * Copyright (C) 2009-2012  Distributed Computing System (DCS) Group,
- *                          Computer Science Institute,
- *                          Department of Science and Technological Innovation,
- *                          University of Piemonte Orientale,
- *                          Alessandria (Italy).
+ * Copyright (C) 2009-2012  Marco Guazzone
+ *                          [Distributed Computing System (DCS) Group,
+ *                           Computer Science Institute,
+ *                           Department of Science and Technological Innovation,
+ *                           University of Piemonte Orientale,
+ *                           Alessandria (Italy).]
  *
- * This program is free software: you can redistribute it and/or modify
+ * This is part of dcsxx-commons.
+ *
+ * dcsxx-commons is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
  * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * dcsxx-commons is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with dcsxx-commons.  If not, see <http://www.gnu.org/licenses/>.
  *
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  */
@@ -65,8 +70,10 @@
 #define DCS_TEST_HPP
 
 
-#include <algorithm>
 #include <cmath>
+#include <complex>
+#include <cstddef>
+#include <dcs/detail/promote_traits.hpp>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -74,35 +81,100 @@
 
 namespace dcs { namespace test { namespace detail { namespace /*<unnamed>*/ {
 
+/// Check if the given complex number is a NaN.
+template <typename T>
+inline
+bool isnan(::std::complex<T> const& z)
+{
+	// According to IEEE, NaN is different even by itself
+	return (z != z) || ::std::isnan(z.real()) || ::std::isnan(z.imag());
+}
+
+/// Check if two (real) numbers are close each other (wrt a given tolerance).
 template <typename T1, typename T2, typename T3>
 inline
 bool close_to(T1 x, T2 y, T3 tol)
 {
+	typedef typename ::dcs::detail::promote_traits<typename ::dcs::detail::promote_traits<T1,T2>::promote_type,T3>::promote_type real_type;
+
 	if (::std::isnan(x) || ::std::isnan(y))
 	{
 		// According to IEEE, NaN are different event by itself
 		return false;
 	}
-	return ::std::abs(x-y) <= (::std::max(::std::abs(x), ::std::abs(y))*tol);
+	return ::std::abs(x-y) <= (::std::max(static_cast<real_type>(::std::abs(x)), static_cast<real_type>(::std::abs(y)))*tol);
+}
+
+/// Check if two complex numbers are close each other (wrt a given tolerance).
+template <typename T1, typename T2, typename T3>
+inline
+bool close_to(::std::complex<T1> const& x, ::std::complex<T2> const& y, T3 tol)
+{
+	typedef typename ::dcs::detail::promote_traits<typename ::dcs::detail::promote_traits<T1,T2>::promote_type,T3>::promote_type real_type;
+
+	if (isnan(x) || isnan(y))
+	{
+		// According to IEEE, NaN is different even by itself
+		return false;
+	}
+	::std::complex<real_type> xx(x);
+	::std::complex<real_type> yy(y);
+	return ::std::abs(xx-yy) <= (::std::max(::std::abs(xx), ::std::abs(yy))*tol);
+}
+
+/// Check if two (real) numbers are close each other (wrt a given tolerance).
+template <typename T1, typename T2, typename T3>
+inline
+bool rel_close_to(T1 x, T2 y, T3 tol)
+{
+	typedef typename ::dcs::detail::promote_traits<typename ::dcs::detail::promote_traits<T1,T2>::promote_type,T3>::promote_type real_type;
+
+	if (::std::isnan(x) || ::std::isnan(y))
+	{
+		// According to IEEE, NaN is different even by itself
+		return false;
+	}
+	return ::std::abs(x-y)/::std::abs(y) <= tol;
+}
+
+/// Check if two complex numbers are close each other (wrt a given tolerance).
+template <typename T1, typename T2, typename T3>
+inline
+bool rel_close_to(::std::complex<T1> const& x, ::std::complex<T2> const& y, T3 tol)
+{
+	typedef typename ::dcs::detail::promote_traits<typename ::dcs::detail::promote_traits<T1,T2>::promote_type,T3>::promote_type real_type;
+
+	if (isnan(x) || isnan(y))
+	{
+		// According to IEEE, NaN is different even by itself
+		return false;
+	}
+	::std::complex<real_type> xx(x);
+	::std::complex<real_type> yy(y);
+	return ::std::abs(xx-yy)/::std::abs(yy) <= tol;
 }
 
 }}}} // Namespace dcs::test::detail::<unnamed>
 
 
-/// Expand the given argument.
+/// Expand its argument \a x.
 #define DCS_TEST_PARAM_EXPAND_(x) x
 
 
-/// Stringify the given argument.
+/// Expand its argument \a x inside parenthesis.
+#define DCS_TEST_PARAM_EXPANDP_(x) (x)
+
+
+/// Transform its argument \a x into a string.
 #define DCS_TEST_STRINGIFY_(x) #x
 
 
-/// Concatenate the given arguments.
+/// Concatenate its two \e string arguments \a x and \a y.
 #define DCS_TEST_STR_JOIN_(x,y) x ## y
 
 
 /// Define the name of the entire test suite.
-#define DCS_TEST_SUITE(m) ::std::cerr << "--- Test Suite: " << m << " ---" << ::std::endl;
+#define DCS_TEST_SUITE(m) ::std::cerr << "--- Test Suite: " << DCS_TEST_PARAM_EXPAND_(m) << " ---" << ::std::endl;
 
 
 /// Init procedure.
@@ -113,19 +185,19 @@ bool close_to(T1 x, T2 y, T3 tol)
 #define DCS_TEST_BEGIN()	/* [DCS_TEST_BEGIN] */ \
 							{ \
 								/* Begin of Test Suite */ \
-								unsigned int test_fails__(0); \
+								::std::size_t test_fails__(0); \
 							/* [/DCS_TEST_BEGIN] */
 
 
-/// Define a new test case.
-#define DCS_TEST_DEF(x) static void DCS_TEST_PARAM_EXPAND_(x)(unsigned int& test_fails__)
+/// Define a new test case \a x inside the current test suite.
+#define DCS_TEST_DEF(x) static void DCS_TEST_PARAM_EXPAND_(x)(::std::size_t& test_fails__)
 
 
 /// Call the previously defined init function.
 #define DCS_TEST_DO_INIT()  dcs_test_init__()
 
 
-/// Call a previously defined test case.
+/// Call a previously defined test case \a x.
 #define DCS_TEST_DO(x)	/* [DCS_TEST_DO] */ \
 						try \
 						{ \
@@ -158,9 +230,15 @@ bool close_to(T1 x, T2 y, T3 tol)
 						/* [/DCS_TEST_END] */
 
 
+/// Output the message \a m.
+/// Note: we don't use macro expansion inside parenthesis to let \a m be an
+///  expression of the form <code>a &lt;&lt; b</code>.
+#define DCS_TEST_TRACE(m) ::std::cerr << "[Test>> " << DCS_TEST_PARAM_EXPAND_(m) << ::std::endl
+
+
 /// Check for the truth of the given assertion \a x.
 #define DCS_TEST_CHECK(x)	/* [DCS_TEST_CHECK] */ \
-							if (!(DCS_TEST_PARAM_EXPAND_(x))) \
+							if (!DCS_TEST_PARAM_EXPANDP_(x)) \
 							{ \
 								DCS_TEST_ERROR( "Failed assertion: " << DCS_TEST_STRINGIFY_(x) ); \
 								++test_fails__; \
@@ -169,37 +247,35 @@ bool close_to(T1 x, T2 y, T3 tol)
 
 
 /// Check for the equality of \a x against \a y.
-#define DCS_TEST_CHECK_EQUAL(x,y)	/* [DCS_TEST_CHECK_EQUAL] */ \
-									if (!(DCS_TEST_PARAM_EXPAND_(x) == DCS_TEST_PARAM_EXPAND_(y))) \
-									{ \
-										DCS_TEST_ERROR( "Failed assertion: (" << DCS_TEST_STRINGIFY_(x) << " == " << DCS_TEST_STRINGIFY_(y) << ")" ); \
-										++test_fails__; \
-									} \
-									/* [/DCS_TEST_CHECK_EQUAL] */
+#define DCS_TEST_CHECK_EQ(x,y)	/* [DCS_TEST_CHECK_EQ] */ \
+								if (!(DCS_TEST_PARAM_EXPANDP_(x) == DCS_TEST_PARAM_EXPANDP_(y))) \
+								{ \
+									DCS_TEST_ERROR( "Failed assertion: (" << DCS_TEST_STRINGIFY_(x) << " == " << DCS_TEST_STRINGIFY_(y) << ")" ); \
+									++test_fails__; \
+								} \
+								/* [/DCS_TEST_CHECK_EQ] */
 
 
-/// Check for the floating point equality of \a x against \a y with a tolerance
-/// of \a e.
+/// Alias for macro \c DCS_TEST_CHECK_EQ (for backward compatibility).
+#define DCS_TEST_CHECK_EQUAL(x,y) DCS_TEST_CHECK_EQ(x,y)
+
+
+/// Check that \a x and \a y are close with respect a given tolerance \a e.
 #define DCS_TEST_CHECK_CLOSE(x,y,e)	/* [DCS_TEST_CHECK_CLOSE] */ \
 									if (!::dcs::test::detail::close_to(DCS_TEST_PARAM_EXPAND_(x), DCS_TEST_PARAM_EXPAND_(y), DCS_TEST_PARAM_EXPAND_(e))) \
 									{ \
-										DCS_TEST_ERROR( "Failed assertion: abs(" << DCS_TEST_STRINGIFY_(x) << "-" << DCS_TEST_STRINGIFY_(y) << ") <= " << DCS_TEST_STRINGIFY_(e) << " [with " << DCS_TEST_STRINGIFY_(x) << " == " << DCS_TEST_PARAM_EXPAND_(x) << ", " << DCS_TEST_STRINGIFY_(y) << " == " << DCS_TEST_PARAM_EXPAND_(y) << " and " << DCS_TEST_STRINGIFY_(e) << " == " << DCS_TEST_PARAM_EXPAND_(e) << "]" ); \
+										DCS_TEST_ERROR( "Failed assertion: abs(" << DCS_TEST_STRINGIFY_(x) << "-" << DCS_TEST_STRINGIFY_(y) << ") <= " << DCS_TEST_STRINGIFY_(e) << " [with " << DCS_TEST_STRINGIFY_(x) << " == " << DCS_TEST_PARAM_EXPANDP_(x) << ", " << DCS_TEST_STRINGIFY_(y) << " == " << DCS_TEST_PARAM_EXPANDP_(y) << " and " << DCS_TEST_STRINGIFY_(e) << " == " << DCS_TEST_PARAM_EXPANDP_(e) << "]" ); \
 										++test_fails__; \
 									} \
 									/* [/DCS_TEST_CHECK_CLOSE] */
 
 
-///// Check for the floating point absolute precision of \a x against \a y with a
-///// tolerance of \a tol.
-//#define DCS_TEST_CHECK_PRECISION(x,y,tol) if (!(::std::fabs((x) - (y)) <= (tol))) { DCS_TEST_ERROR( ">> Failed assertion: (abs(" << DCS_TEST_STRINGIFY_(x) << " - " << DCS_TEST_STRINGIFY_(y) << ") <= " << DCS_TEST_STRINGIFY_(tol) << ")" ); ++test_fails__; }
-
-
 /// Check for the floating point relative precision of \a x against \a y with a
 /// tolerance of \a e.
 #define DCS_TEST_CHECK_REL_CLOSE(x,y,e)	/* [DCS_TEST_CHECK_REL_CLOSE] */ \
-										if ((DCS_TEST_PARAM_EXPAND_(x) != DCS_TEST_PARAM_EXPAND_(y)) && !(::std::abs((DCS_TEST_PARAM_EXPAND_(x) - DCS_TEST_PARAM_EXPAND_(y))/DCS_TEST_PARAM_EXPAND_(y)) <= DCS_TEST_PARAM_EXPAND_(e))) \
+										if (!::dcs::test::detail::rel_close_to(DCS_TEST_PARAM_EXPAND_(x), DCS_TEST_PARAM_EXPAND_(y), DCS_TEST_PARAM_EXPAND_(e))) \
 										{ \
-											DCS_TEST_ERROR( "Failed assertion: abs((" << DCS_TEST_STRINGIFY_(x) << "-" << DCS_TEST_STRINGIFY_(y) << ")/" << DCS_TEST_STRINGIFY_(y) << ") <= " << DCS_TEST_STRINGIFY_(e)  << " [with " << DCS_TEST_STRINGIFY_(x) << " == " << DCS_TEST_PARAM_EXPAND_(x) << ", " << DCS_TEST_STRINGIFY_(y) << " == " << DCS_TEST_PARAM_EXPAND_(y) << " and " << DCS_TEST_STRINGIFY_(e) << " == " << DCS_TEST_PARAM_EXPAND_(e) << "]" ); \
+											DCS_TEST_ERROR( "Failed assertion: abs((" << DCS_TEST_STRINGIFY_(x) << "-" << DCS_TEST_STRINGIFY_(y) << ")/" << DCS_TEST_STRINGIFY_(y) << ") <= " << DCS_TEST_STRINGIFY_(e)  << " [with " << DCS_TEST_STRINGIFY_(x) << " == " << DCS_TEST_PARAM_EXPANDP_(x) << ", " << DCS_TEST_STRINGIFY_(y) << " == " << DCS_TEST_PARAM_EXPANDP_(y) << " and " << DCS_TEST_STRINGIFY_(e) << " == " << DCS_TEST_PARAM_EXPANDP_(e) << "]" ); \
 											++test_fails__; \
 										} \
 										/* [/DCS_TEST_CHECK_REL_CLOSE] */
@@ -207,14 +283,14 @@ bool close_to(T1 x, T2 y, T3 tol)
 
 /// Check that elements of \a x and \a y are equal.
 #define DCS_TEST_CHECK_VECTOR_EQ(x,y,n)	/* [DCS_TEST_CHECK_VECTOR_EQ] */ \
-										if (DCS_TEST_PARAM_EXPAND_(n) > 0) \
+										if (DCS_TEST_PARAM_EXPANDP_(n) > 0) \
 										{ \
 											::std::size_t n__ = DCS_TEST_PARAM_EXPAND_(n); \
 											for (::std::size_t i__ = n__; i__ > 0; --i__) \
 											{ \
-												if (!(DCS_TEST_PARAM_EXPAND_(x)[n__-i__] == DCS_TEST_PARAM_EXPAND_(y)[n__-i__])) \
+												if (!(DCS_TEST_PARAM_EXPANDP_(x)[n__-i__]==DCS_TEST_PARAM_EXPANDP_(y)[n__-i__])) \
 												{ \
-													DCS_TEST_ERROR( "Failed assertion: (" << DCS_TEST_STRINGIFY_(x[i__]) << "==" << DCS_TEST_STRINGIFY_(y[i__]) << ")" << " [with " << DCS_TEST_STRINGIFY_(x[i__]) << " == " << DCS_TEST_PARAM_EXPAND_(x)[n__-i__] << ", " << DCS_TEST_STRINGIFY_(y[i__]) << " == " << DCS_TEST_PARAM_EXPAND_(y)[n__-i__] << ", " << DCS_TEST_STRINGIFY_(i__) << " == " << i__ << " and " << DCS_TEST_STRINGIFY_(n) << " == " << n__ << "]" ); \
+													DCS_TEST_ERROR( "Failed assertion: (" << DCS_TEST_STRINGIFY_(x[i__]) << "==" << DCS_TEST_STRINGIFY_(y[i__]) << ")" << " [with " << DCS_TEST_STRINGIFY_(x[i__]) << " == " << DCS_TEST_PARAM_EXPANDP_(x)[n__-i__] << ", " << DCS_TEST_STRINGIFY_(y[i__]) << " == " << DCS_TEST_PARAM_EXPANDP_(y)[n__-i__] << ", " << DCS_TEST_STRINGIFY_(i__) << " == " << i__ << " and " << DCS_TEST_STRINGIFY_(n) << " == " << n__ << "]" ); \
 													++test_fails__; \
 												} \
 											} \
@@ -225,19 +301,37 @@ bool close_to(T1 x, T2 y, T3 tol)
 /// Check that elements of \a x and \a y are close with respect to a given
 /// precision.
 #define DCS_TEST_CHECK_VECTOR_CLOSE(x,y,n,e)	/* [DCS_TEST_CHECK_VECTOR_CLOSE] */ \
-												if (DCS_TEST_PARAM_EXPAND_(n) > 0) \
+												if (DCS_TEST_PARAM_EXPANDP_(n) > 0) \
 												{ \
 													::std::size_t n__ = DCS_TEST_PARAM_EXPAND_(n); \
 													for (::std::size_t i__ = n__; i__ > 0; --i__) \
 													{ \
-														if (!(::std::abs(DCS_TEST_PARAM_EXPAND_(x)[n__-i__]-DCS_TEST_PARAM_EXPAND_(y)[n__-i__]) <= DCS_TEST_PARAM_EXPAND_(e))) \
+														if (!::dcs::test::detail::close_to(DCS_TEST_PARAM_EXPANDP_(x)[n__-i__], DCS_TEST_PARAM_EXPANDP_(y)[n__-i__], DCS_TEST_PARAM_EXPANDP_(e))) \
 														{ \
-															DCS_TEST_ERROR( "Failed assertion: abs(" << DCS_TEST_STRINGIFY_(x[i__]) << "-" << DCS_TEST_STRINGIFY_(y[i__]) << ") <= " << DCS_TEST_STRINGIFY_(e)  << " [with " << DCS_TEST_STRINGIFY_(x[i__]) << " == " << DCS_TEST_PARAM_EXPAND_(x)[n__-i__] << ", " << DCS_TEST_STRINGIFY_(y[i__]) << " == " << DCS_TEST_PARAM_EXPAND_(y)[n__-i__] << ", " << DCS_TEST_STRINGIFY_(i__) << " == " << i__ << ", " << DCS_TEST_STRINGIFY_(n) << " == " << n__ << " and " << DCS_TEST_STRINGIFY_(e) << " == " << DCS_TEST_PARAM_EXPAND_(e) << "]" ); \
+															DCS_TEST_ERROR( "Failed assertion: abs(" << DCS_TEST_STRINGIFY_(x[i__]) << "-" << DCS_TEST_STRINGIFY_(y[i__]) << ") <= " << DCS_TEST_STRINGIFY_(e)  << " [with " << DCS_TEST_STRINGIFY_(x[i__]) << " == " << DCS_TEST_PARAM_EXPANDP_(x)[n__-i__] << ", " << DCS_TEST_STRINGIFY_(y[i__]) << " == " << DCS_TEST_PARAM_EXPANDP_(y)[n__-i__] << ", " << DCS_TEST_STRINGIFY_(i__) << " == " << i__ << ", " << DCS_TEST_STRINGIFY_(e) << " == " << DCS_TEST_PARAM_EXPANDP_(e) << " and " << DCS_TEST_STRINGIFY_(n) << " == " << n__ << "]" ); \
 															++test_fails__; \
 														} \
 													} \
 												} \
 												/* [/DCS_TEST_CHECK_VECTOR_CLOSE] */
+
+
+/// Check that elements of \a x and \a y are close with respect to a given
+/// relative precision.
+#define DCS_TEST_CHECK_VECTOR_REL_CLOSE(x,y,n,e)	/* [DCS_TEST_CHECK_VECTOR_REL_CLOSE] */ \
+													if (DCS_TEST_PARAM_EXPANDP_(n) > 0) \
+													{ \
+														::std::size_t n__ = DCS_TEST_PARAM_EXPAND_(n); \
+														for (::std::size_t i__ = n__; i__ > 0; --i__) \
+														{ \
+															if (!::dcs::test::detail::rel_close_to(DCS_TEST_PARAM_EXPANDP_(x)[n__-i__], DCS_TEST_PARAM_EXPANDP_(y)[n__-i__], DCS_TEST_PARAM_EXPANDP_(e))) \
+															{ \
+																DCS_TEST_ERROR( "Failed assertion: abs((" << DCS_TEST_STRINGIFY_(x[i__]) << "-" << DCS_TEST_STRINGIFY_(y[i__]) << ")/" << DCS_TEST_STRINGIFY_(y[i__]) << ") <= " << DCS_TEST_STRINGIFY_(e)  << " [with " << DCS_TEST_STRINGIFY_(x[i__]) << " == " << DCS_TEST_PARAM_EXPANDP_(x)[n__-i__] << ", " << DCS_TEST_STRINGIFY_(y[i__]) << " == " << DCS_TEST_PARAM_EXPANDP_(y)[n__-i__] << ", " << DCS_TEST_STRINGIFY_(i__) << " == " << i__ << ", " << DCS_TEST_STRINGIFY_(e) << " == " << DCS_TEST_PARAM_EXPANDP_(e) << " and " << DCS_TEST_STRINGIFY_(n) << " == " << n__ << "]" ); \
+																++test_fails__; \
+															} \
+														} \
+													} \
+													/* [/DCS_TEST_CHECK_VECTOR_REL_CLOSE] */
 
 
 /// Check that elements of matrices \a x and \a y are equal.
@@ -246,9 +340,9 @@ bool close_to(T1 x, T2 y, T3 tol)
 											{ \
 												for (::std::size_t j__ = 0; j__ < DCS_TEST_PARAM_EXPAND_(nc); ++j__) \
 												{ \
-													if (!(::std::abs(DCS_TEST_PARAM_EXPAND_(x)(i__,j__)-DCS_TEST_PARAM_EXPAND_(y)(i__,j__)) <= DCS_TEST_PARAM_EXPAND_(e))) \
+													if (!(DCS_TEST_PARAM_EXPANDP_(x)(i__,j__)==DCS_TEST_PARAM_EXPANDP_(y)(i__,j__))) \
 													{ \
-														DCS_TEST_ERROR( "Failed assertion: abs(" << DCS_TEST_STRINGIFY_(x(i__,j__)) << "-" << DCS_TEST_STRINGIFY_(y(i__,j__)) << ") <= " << DCS_TEST_STRINGIFY_(e)  << " [with " << DCS_TEST_STRINGIFY_(x(i__,j__)) << " == " << DCS_TEST_PARAM_EXPAND_(x)(i__,j__) << ", " << DCS_TEST_STRINGIFY_(y(i__,j__)) << " == " << DCS_TEST_PARAM_EXPAND_(y)(i__,j__) << ", " << DCS_TEST_STRINGIFY_(i__) << " == " << i__ << ", " << DCS_TEST_STRINGIFY_(j__) << " == " << DCS_TEST_PARAM_EXPAND_(j__) << " and " << DCS_TEST_STRINGIFY_(e) << " == " << DCS_TEST_PARAM_EXPAND_(e) << "]" ); \
+														DCS_TEST_ERROR( "Failed assertion: (" << DCS_TEST_STRINGIFY_(x(i__,j__)) << " == " << DCS_TEST_STRINGIFY_(y(i__,j__)) << ") [with " << DCS_TEST_STRINGIFY_(x(i__,j__)) << " == " << DCS_TEST_PARAM_EXPANDP_(x)(i__,j__) << ", " << DCS_TEST_STRINGIFY_(y(i__,j__)) << " == " << DCS_TEST_PARAM_EXPANDP_(y)(i__,j__) << ", " << DCS_TEST_STRINGIFY_(i__) << " == " << i__ << ", " << DCS_TEST_STRINGIFY_(j__) << " == " << DCS_TEST_PARAM_EXPANDP_(j__) << ", " << DCS_TEST_STRINGIFY_(nr) << " == " << DCS_TEST_PARAM_EXPANDP_(nr) << " and " << DCS_TEST_STRINGIFY_(nc) << " == " << DCS_TEST_PARAM_EXPANDP_(nc) << "]" ); \
 														++test_fails__; \
 													} \
 												} \
@@ -259,21 +353,38 @@ bool close_to(T1 x, T2 y, T3 tol)
 /// Check that elements of matrices \a x and \a y are are with respect to a
 /// given precision.
 #define DCS_TEST_CHECK_MATRIX_CLOSE(x,y,nr,nc, e)	/* [DCS_TEST_CHECK_MATRIX_CLOSE] */ \
-												for (::std::size_t i__ = 0; i__ < DCS_TEST_PARAM_EXPAND_(nr); ++i__) \
-												{ \
-													for (::std::size_t j__ = 0; j__ < DCS_TEST_PARAM_EXPAND_(nc); ++j__) \
+													for (::std::size_t i__ = 0; i__ < DCS_TEST_PARAM_EXPANDP_(nr); ++i__) \
 													{ \
-														if (!(::std::abs(DCS_TEST_PARAM_EXPAND_(x)(i__,j__)-DCS_TEST_PARAM_EXPAND_(y)(i__,j__)) <= DCS_TEST_PARAM_EXPAND_(e))) \
+														for (::std::size_t j__ = 0; j__ < DCS_TEST_PARAM_EXPANDP_(nc); ++j__) \
 														{ \
-															DCS_TEST_ERROR( "Failed assertion: abs(" << DCS_TEST_STRINGIFY_(x(i__,j__)) << "-" << DCS_TEST_STRINGIFY_(y(i__,j__)) << ") <= " << DCS_TEST_STRINGIFY_(e)  << " [with " << DCS_TEST_STRINGIFY_(x(i__,j__)) << " == " << DCS_TEST_PARAM_EXPAND_(x)(i__,j__) << ", " << DCS_TEST_STRINGIFY_(y(i__,j__)) << " == " << DCS_TEST_PARAM_EXPAND_(y)(i__,j__) << ", " << DCS_TEST_STRINGIFY_(i__) << " == " << i__ << ", " << DCS_TEST_STRINGIFY_(j__) << " == " << DCS_TEST_PARAM_EXPAND_(j__) << " and " << DCS_TEST_STRINGIFY_(e) << " == " << DCS_TEST_PARAM_EXPAND_(e) << "]" ); \
-															++test_fails__; \
+															if (!::dcs::test::detail::close_to(DCS_TEST_PARAM_EXPANDP_(x)(i__,j__), DCS_TEST_PARAM_EXPANDP_(y)(i__,j__), DCS_TEST_PARAM_EXPANDP_(e))) \
+															{ \
+																DCS_TEST_ERROR( "Failed assertion: abs(" << DCS_TEST_STRINGIFY_(x(i__,j__)) << "-" << DCS_TEST_STRINGIFY_(y(i__,j__)) << ") <= " << DCS_TEST_STRINGIFY_(e)  << " [with " << DCS_TEST_STRINGIFY_(x(i__,j__)) << " == " << DCS_TEST_PARAM_EXPANDP_(x)(i__,j__) << ", " << DCS_TEST_STRINGIFY_(y(i__,j__)) << " == " << DCS_TEST_PARAM_EXPANDP_(y)(i__,j__) << ", " << DCS_TEST_STRINGIFY_(i__) << " == " << i__ << ", " << DCS_TEST_STRINGIFY_(j__) << " == " << DCS_TEST_PARAM_EXPANDP_(j__) << ", " << DCS_TEST_STRINGIFY_(e) << " == " << DCS_TEST_PARAM_EXPANDP_(e) << ", " << DCS_TEST_STRINGIFY_(nr) << " == " << DCS_TEST_PARAM_EXPANDP_(nr) << " and " << DCS_TEST_STRINGIFY_(nc) << " == " << DCS_TEST_PARAM_EXPANDP_(nc) << "]" ); \
+																++test_fails__; \
+															} \
 														} \
 													} \
-												} \
-												/* [/DCS_TEST_CHECK_MATRIX_CLOSE] */
+													/* [/DCS_TEST_CHECK_MATRIX_CLOSE] */
+
+
+/// Check that elements of matrices \a x and \a y are are with respect to a
+/// given relative precision.
+#define DCS_TEST_CHECK_MATRIX_REL_CLOSE(x,y,nr,nc, e)	/* [DCS_TEST_CHECK_MATRIX_REL_CLOSE] */ \
+														for (::std::size_t i__ = 0; i__ < DCS_TEST_PARAM_EXPANDP_(nr); ++i__) \
+														{ \
+															for (::std::size_t j__ = 0; j__ < DCS_TEST_PARAM_EXPANDP_(nc); ++j__) \
+															{ \
+																if (!::dcs::test::detail::rel_close_to(DCS_TEST_PARAM_EXPANDP_(x)(i__,j__), DCS_TEST_PARAM_EXPANDP_(y)(i__,j__), DCS_TEST_PARAM_EXPANDP_(e))) \
+																{ \
+																	DCS_TEST_ERROR( "Failed assertion: abs((" << DCS_TEST_STRINGIFY_(x(i__,j__)) << "-" << DCS_TEST_STRINGIFY_(y(i__,j__)) << ")/" << DCS_TEST_STRINGIFY_(y(i__,j__)) << ") <= " << DCS_TEST_STRINGIFY_(e)  << " [with " << DCS_TEST_STRINGIFY_(x(i__,j__)) << " == " << DCS_TEST_PARAM_EXPANDP_(x)(i__,j__) << ", " << DCS_TEST_STRINGIFY_(y(i__,j__)) << " == " << DCS_TEST_PARAM_EXPANDP_(y)(i__,j__) << ", " << DCS_TEST_STRINGIFY_(i__) << " == " << i__ << ", " << DCS_TEST_STRINGIFY_(j__) << " == " << DCS_TEST_PARAM_EXPANDP_(j__) << ", " << DCS_TEST_STRINGIFY_(e) << " == " << DCS_TEST_PARAM_EXPANDP_(e) << ", " << DCS_TEST_STRINGIFY_(nr) << " == " << DCS_TEST_PARAM_EXPANDP_(nr) << " and " << DCS_TEST_STRINGIFY_(nc) << " == " << DCS_TEST_PARAM_EXPANDP_(nc) << "]" ); \
+																	++test_fails__; \
+																} \
+															} \
+														} \
+														/* [/DCS_TEST_CHECK_MATRIX_REL_CLOSE] */
 
 
 /// Output the error message \a x.
-#define DCS_TEST_ERROR(x) std::cerr << "[Error (" << __FILE__ << ":" << __func__ << ":" << __LINE__ << ")>> " << DCS_TEST_PARAM_EXPAND_(x) << std::endl
+#define DCS_TEST_ERROR(x) ::std::cerr << "[Error (" << __FILE__ << ":" << __func__ << ":" << __LINE__ << ")>> " << DCS_TEST_PARAM_EXPAND_(x) << ::std::endl
 
 #endif // DCS_TEST_HPP
