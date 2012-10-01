@@ -1,10 +1,8 @@
 /**
- * \file dcs/math/functional/close_to.hpp
+ * \file dcs/math/functional/essentially_equal.hpp
  *
- * \brief Functor for checking if two numbers are close to each other (with
+ * \brief Functor for checking if two numbers are essentially equal (with
  *  respect to floating-point comparison).
- *
- * \author Marco Guazzone (marco.guazzone@gmail.com)
  *
  * <hr/>
  *
@@ -31,42 +29,31 @@
  * along with dcsxx-commons.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_MATH_FUNCTIONAL_CLOSE_TO_HPP
-#define DCS_MATH_FUNCTIONAL_CLOSE_TO_HPP
+#ifndef DCS_MATH_FUNCTIONAL_ESSENTIALLY_EQUAL_HPP
+#define DCS_MATH_FUNCTIONAL_ESSENTIALLY_EQUAL_HPP
 
 
-#include <cmath>
+#include <dcs/math/traits/float.hpp>
 #include <functional>
-#include <limits>
 
 
 namespace dcs { namespace math {
 
-/**
- * \brief Check if two real numbers are close each other, with respect to a
- *  given tolerance.
- */
-//TODO: add a specialization for complex numbers (hints: use enable_if).
 template <typename T>
-struct close_to: ::std::binary_function <T,T,bool>
+struct essentially_equal: ::std::binary_function <T,T,bool>
 {
 	bool operator()(T const& x, T const& y) const
     {
-		return this->operator()(x, y, T(100)*::std::numeric_limits<T>::epsilon());
+		return float_traits<T>::essentially_equal(x, y);
 	}
 
 	bool operator()(T const& x, T const& y, T const& tol) const
     {
-		if (::std::isnan(x) || ::std::isnan(y))
-		{
-			// According to IEEE, NaN are different event by itself
-			return false;
-		}
-		return ::std::abs(x-y) <= (::std::max(static_cast<T>(::std::abs(x)), static_cast<T>(::std::abs(y)))*tol);
+		return float_traits<T>::essentially_equal(x, y, tol);
 	}
-}; // close_to
+};
 
 }} // Namespace dcs::math
 
 
-#endif // DCS_MATH_FUNCTIONAL_CLOSE_TO_HPP
+#endif // DCS_MATH_FUNCTIONAL_ESSENTIALLY_EQUAL_HPP

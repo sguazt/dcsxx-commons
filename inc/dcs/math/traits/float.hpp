@@ -82,15 +82,41 @@ struct float_traits<T, typename ::boost::enable_if< ::boost::is_floating_point<T
 	}
 
 
+	/// \deprecated Use \c approximately_less_equal or \c essentially_less_equal
 	static bool definitely_less_equal(T x, T y, T tol)
 	{
 		return definitely_less(x, y, tol) || approximately_equal(x, y, tol);
 	}
 
 
+	/// \deprecated Use \c approximately_less_equal or \c essentially_less_equal
 	static bool definitely_less_equal(T x, T y)
 	{
 		return definitely_less_equal(x, y, tolerance);
+	}
+
+
+	static bool approximately_less_equal(T x, T y, T tol)
+	{
+		return definitely_less(x, y, tol) || approximately_equal(x, y, tol);
+	}
+
+
+	static bool approximately_less_equal(T x, T y)
+	{
+		return approximately_less_equal(x, y, tolerance);
+	}
+
+
+	static bool essentially_less_equal(T x, T y, T tol)
+	{
+		return definitely_less(x, y, tol) || essentially_equal(x, y, tol);
+	}
+
+
+	static bool essentially_less_equal(T x, T y)
+	{
+		return essentially_less_equal(x, y, tolerance);
 	}
 
 
@@ -106,15 +132,39 @@ struct float_traits<T, typename ::boost::enable_if< ::boost::is_floating_point<T
 	}
 
 
+	/// \deprecated Use \c approximately_less_equal or \c essentially_less_equal
 	static bool definitely_greater_equal(T x, T y, T tol)
 	{
 		return definitely_greater(x, y, tol) || approximately_equal(x, y, tol);
 	}
 
 
+	/// \deprecated Use \c approximately_greater_equal or \c essentially_greater_equal
 	static bool definitely_greater_equal(T x, T y)
 	{
 		return definitely_greater_equal(x, y, tolerance);
+	}
+
+	static bool approximately_greater_equal(T x, T y, T tol)
+	{
+		return definitely_greater(x, y, tol) || approximately_equal(x, y, tol);
+	}
+
+
+	static bool approximately_greater_equal(T x, T y)
+	{
+		return approximately_greater_equal(x, y, tolerance);
+	}
+
+	static bool essentially_greater_equal(T x, T y, T tol)
+	{
+		return definitely_greater(x, y, tol) || essentially_equal(x, y, tol);
+	}
+
+
+	static bool essentially_greater_equal(T x, T y)
+	{
+		return essentially_greater_equal(x, y, tolerance);
 	}
 
 
