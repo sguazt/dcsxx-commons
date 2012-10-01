@@ -29,7 +29,7 @@
 #define DCS_ALGORITHMS_HPP
 
 
-#include <dcs/algorithm/combination.hpp>
+#include <dcs/algorithm/combinatorics.hpp>
 #include <dcs/algorithm/order.hpp>
 
 
