@@ -63,8 +63,8 @@ struct partition_traits
 {
 	typedef ValueT value_type;
 	typedef ::std::vector<value_type> element_container;
-	typedef typename element_container::elementor element_iterator;
-	typedef typename element_container::const_elementor element_const_iterator;
+	typedef typename element_container::iterator element_iterator;
+	typedef typename element_container::const_iterator element_const_iterator;
 	typedef ::std::vector<element_container> subset_container;
 	typedef typename subset_container::iterator subset_iterator;
 	typedef typename subset_container::const_iterator subset_const_iterator;
