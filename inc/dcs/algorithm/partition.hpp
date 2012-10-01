@@ -119,6 +119,11 @@ class lexicographic_partition
 				   DCS_EXCEPTION_THROW(::std::overflow_error,
 									   "No following partitions"));
 
+		// Check if #subsets == #elements, that is if we are in the case:
+		//   ((x1),(x2),...,(xn))
+		// NOTE: This works since this class builds partition in lexicographic order
+		has_next_ = (M_[n_-1]+1) < n_;
+
 		for (::std::size_t i = n_-1; i > 0; --i)
 		{
 			if (kappa_[i] <= M_[i-1])
@@ -143,11 +148,6 @@ class lexicographic_partition
 			}
 		}
 
-		// Check if #subsets == #elements, that is if we are in the case:
-		//   ((x1),(x2),...,(xn))
-		// NOTE: This works since this class builds partition in lexicographic order
-		has_next_ = (M_[n_-1]+1) < n_;
-
 		return *this;
 	}
 
@@ -161,6 +161,11 @@ class lexicographic_partition
 		DCS_ASSERT(has_prev_,
 				   DCS_EXCEPTION_THROW(::std::underflow_error,
 									   "No preceding partitions"));
+
+		// Check if #subsets == 1, that is if we are in the case:
+		//   ((x1,x2,...,xn)
+		// NOTE: This works since this class builds partition in lexicographic order
+		has_prev_ = (M_[n_-1]+1) > 1;
 
 		for (::std::size_t i = n_-1; i > 0; --i)
 		{
@@ -186,11 +191,6 @@ class lexicographic_partition
 				break;
 			}
 		}
-
-		// Check if #subsets == 1, that is if we are in the case:
-		//   ((x1,x2,...,xn)
-		// NOTE: This works since this class builds partition in lexicographic order
-		has_prev_ = (M_[n_-1]+1) > 1;
 
 		return *this;
 	}
