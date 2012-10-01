@@ -37,9 +37,14 @@
 //#	define DCS_DEBUG_PRINT(fmt, ...)  DCS_DEBUG_PRINT2_(DCS_DEBUG_WHERESTR_ fmt, DCS_DEBUG_WHEREARG_, __VA_ARGS__)
 //@} for C99 and C++0x
 
+#   include <algorithm>
 #	include <cassert>
 #	include <iostream>
+#	include <iterator>
+# 	include <sstream>
+# 	include <string>
 # 	include <typeinfo>
+
 /// Macro for telling whether we are in debug mode.
 # 	define DCS_DEBUG /**/
 /// Macro for expanding its argument \c x
@@ -67,7 +72,11 @@
 #	define DCS_DEBUG_DO(x) x
 /// Macro for assertion
 #	define DCS_DEBUG_ASSERT(x) assert(x)
-#else
+
+#else // NDEBUG
+
+# 	include <string>
+
 /// Macro for telling that we are in debug mode.
 # 	undef DCS_DEBUG /**/
 /// Macro for telling what level of debugging to enable.
@@ -90,5 +99,26 @@
 /// Macro for assertion
 #	define DCS_DEBUG_ASSERT(x) /**/
 #endif // NDEBUG
+
+namespace dcs { namespace debug {
+
+template <typename FwdItT>
+::std::string to_string(FwdItT first, FwdItT last)
+{
+#ifdef DCS_DEBUG
+	typedef typename ::std::iterator_traits<FwdItT>::value_type value_type;
+
+    ::std::ostringstream oss;
+    ::std::copy(first,
+                last,
+                ::std::ostream_iterator<value_type>(oss, " "));
+
+    return oss.str();
+#else // DCS_DEBUG
+    return "";
+#endif // DCS_DEBUG
+}
+
+}} // Namespace dcs::debug
 
 #endif // DCS_DEBUG_HPP
