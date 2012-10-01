@@ -57,6 +57,8 @@ DCS_TEST_DEF( test_partition_class )
 
 	dcs::algorithm::lexicographic_partition part(sz);
 
+	DCS_TEST_TRACE( "Test case: Partition - Class - increment" );
+
 	while (part.has_next())
 	{
 		DCS_DEBUG_STREAM << part << " : " << part.num_subsets() << " : ";
@@ -67,6 +69,8 @@ DCS_TEST_DEF( test_partition_class )
 
 		++part;
 	}
+
+	DCS_TEST_TRACE( "Test case: Partition - Class - decrement" );
 
 	while (part.has_prev())
 	{
