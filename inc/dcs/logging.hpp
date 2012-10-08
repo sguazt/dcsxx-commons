@@ -53,11 +53,11 @@
 
 #define DCS_LOGGING_AT (::std::string(DCS_LOGGING_AT0_)+::std::string(DCS_LOGGING_AT1_))
 
-#define DCS_LOGGING_LOG_(msgtype,msg) ::std::clog << "[" << DCS_LOGGING_EXPAND_(msgtype) << ":" << DCS_LOGGING_AT << "] " << DCS_LOGGING_EXPAND_(msg) << ::std::endl;
+#define DCS_LOGGING_ERROR(msg) ::dcs::log_error(DCS_LOGGING_AT, msg)
 
-#define DCS_LOGGING_WARN(msg) DCS_LOGGING_LOG_("W",msg)
+#define DCS_LOGGING_INFO(msg) ::dcs::log_info(DCS_LOGGING_AT, msg)
 
-#define DCS_LOGGING_ERROR(msg) DCS_LOGGING_LOG_("E",msg)
+#define DCS_LOGGING_WARN(msg) ::dcs::log_warn(DCS_LOGGING_AT, msg)
 
 
 namespace dcs {
@@ -72,18 +72,41 @@ namespace detail { namespace /*<unnamed>*/ { namespace logging {
 //}
 //
 
+enum log_category
+{
+	error_log,
+	info_log,
+	warning_log
+};
+
 inline
-void log(::std::string const& type, ::std::string const& at, ::std::string const& msg)
+::std::string to_string(log_category cat)
+{
+	switch (cat)
+	{
+		case error_log:
+			return "E";
+		case info_log:
+			return "I";
+		case warning_log:
+			return "W";
+	}
+
+	return "?";
+}
+
+inline
+void log(log_category cat, ::std::string const& at, ::std::string const& msg)
 {
 	::std::size_t pos(at.find_last_of("/\\")); // handle both win and *nix
 
 	if (pos != ::std::string::npos)
 	{
-		::std::clog << "[" << type << ":" << at.substr(pos+1) << "] " << msg << ::std::endl;
+		::std::clog << "[" << to_string(cat) << ":" << at.substr(pos+1) << "] " << msg << ::std::endl;
 	}
 	else
 	{
-		::std::clog << "[" << type << ":" << at << "] " << msg << ::std::endl;
+		::std::clog << "[" << to_string(cat) << ":" << at << "] " << msg << ::std::endl;
 	}
 }
 
@@ -99,21 +122,21 @@ void log(::std::string const& type, ::std::string const& at, ::std::string const
 //}
 
 inline
+void log_error(::std::string const& at, ::std::string const& msg)
+{
+	detail::logging::log(detail::logging::error_log, at, msg);
+}
+
+inline
 void log_info(::std::string const& at, ::std::string const& msg)
 {
-	detail::logging::log("I", at, msg);
+	detail::logging::log(detail::logging::info_log, at, msg);
 }
 
 inline
 void log_warn(::std::string const& at, ::std::string const& msg)
 {
-	detail::logging::log("W", at, msg);
-}
-
-inline
-void log_error(::std::string const& at, ::std::string const& msg)
-{
-	detail::logging::log("E", at, msg);
+	detail::logging::log(detail::logging::warning_log, at, msg);
 }
 
 } // Namespace dcs
