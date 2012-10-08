@@ -210,12 +210,16 @@ class posix_process
 			}
 
 			// Run the command
+			DCS_DEBUG_TRACE("Going to run: " << cmd_ << ::dcs::debug::to_string(argv, argv+nargs-1) );
 			::execvp(cmd_.c_str(), argv);
 
 			// Actually we should delete argv and envp data. As we must not
 			// call any non-async-signal-safe functions though we simply exit.
-			::write(STDERR_FILENO, "execvp() failed\n", 17);
-			_exit(EXIT_FAILURE);
+			::std::ostringstream oss;
+			oss << "Call to execvp(3) failed for command '" << cmd_ << "': " << ::strerror(errno) << ::std::endl;
+			::std::size_t count(oss.str().size());
+			::write(STDERR_FILENO, oss.str().c_str(), count);
+			::_exit(EXIT_FAILURE);
 		}
 
 		// The parent
