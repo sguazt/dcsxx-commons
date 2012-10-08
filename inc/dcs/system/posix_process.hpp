@@ -44,6 +44,7 @@
 
 #include <cerrno>
 #include <cstddef>
+#include <cstdlib>
 #include <cstring>
 #include <dcs/debug.hpp>
 #include <dcs/exception.hpp>
