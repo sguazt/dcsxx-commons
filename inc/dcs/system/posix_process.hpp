@@ -48,6 +48,7 @@
 #include <dcs/debug.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/logging.hpp>
+#include <dcs/system/process_status_category.hpp>
 #include <fcntl.h>
 #include <iterator>
 #include <sstream>
@@ -66,16 +67,7 @@ namespace dcs { namespace system {
 
 class posix_process
 {
-	public: enum status_category
-	{
-		aborted_status,
-		failed_status,
-		resumed_status,
-		running_status,
-		stopped_status,
-		terminated_status,
-		undefined_status
-	};
+	private: static const unsigned int zzz_secs_ = 5;
 
 
 	public: explicit posix_process(::std::string const& cmd)
@@ -83,7 +75,7 @@ class posix_process
 //	  args_(),
 	  async_(false),
 	  pid_(-1),
-	  status_(undefined_status),
+	  status_(undefined_process_status),
 	  sig_(-1),
 	  exit_status_(EXIT_SUCCESS)
 	{
@@ -229,7 +221,7 @@ class posix_process
 		// The parent
 
 		pid_ = pid;
-		status_ = running_status;
+		status_ = running_process_status;
 
 		if (!async_)
 		{
@@ -254,7 +246,7 @@ class posix_process
 			exit_status_ = WEXITSTATUS(wstatus);
 			if (exit_status_ != EXIT_SUCCESS)
 			{
-				status_ = failed_status;
+				status_ = failed_process_status;
 
 				::std::ostringstream oss;
 				oss << "Command '" << cmd_ << "' exited with status: " << exit_status_;
@@ -262,22 +254,22 @@ class posix_process
 			}
 			else
 			{
-				status_ = terminated_status;
+				status_ = terminated_process_status;
 			}
 		}
 		else if (WIFSTOPPED(wstatus))
 		{
-			status_ = stopped_status;
+			status_ = stopped_process_status;
 			sig_ = WSTOPSIG(wstatus);
 		}
 		else if (WIFCONTINUED(wstatus))
 		{
-			status_ = resumed_status;
+			status_ = resumed_process_status;
 		}
 		else if (WIFSIGNALED(wstatus))
 		{
 			sig_ = WTERMSIG(wstatus);
-			status_ = aborted_status;
+			status_ = aborted_process_status;
 
 			::std::ostringstream oss;
 			oss << "Command '" << cmd_ << "' signaled with signal: " << sig_;
@@ -285,7 +277,7 @@ class posix_process
 		}
 		else
 		{
-			status_ = aborted_status;
+			status_ = aborted_process_status;
 
 			::std::ostringstream oss;
 			oss << "Command '" << cmd_ << "' failed for an unknown reason";
@@ -293,7 +285,7 @@ class posix_process
 		}
 	}
 
-	public: status_category status() const
+	public: process_status_category status() const
 	{
 		return status_;
 	}
@@ -301,7 +293,7 @@ class posix_process
 	public: void stop()
 	{
 		// pre: process must be running
-		DCS_ASSERT(status_ == running_status,
+		DCS_ASSERT(status_ == running_process_status,
 				   DCS_EXCEPTION_THROW(::std::runtime_error,
 									   "Cannot stop a process that is not running"));
 
@@ -311,14 +303,30 @@ class posix_process
 	public: void resume()
 	{
 		// pre: process must have been stopped
-		DCS_ASSERT(status_ == stopped_status,
+		DCS_ASSERT(status_ == stopped_process_status,
 				   DCS_EXCEPTION_THROW(::std::runtime_error,
 									   "Cannot resume a process that has not been stopped"));
 
 		this->kill(SIGCONT);
 	}
 
-	public: bool exist() const
+	public: void terminate()
+	{
+		// pre: process must be running
+		DCS_ASSERT(status_ == running_process_status,
+				   DCS_EXCEPTION_THROW(::std::runtime_error,
+									   "Cannot stop a process that is not running"));
+
+		this->kill(SIGTERM);
+		::sleep(zzz_secs_);
+		if (this->alive())
+		{
+			this->kill(SIGKILL);
+		}
+		this->wait();
+	}
+
+	public: bool alive() const
 	{
 		if (::kill(pid_, 0) == -1)
 		{
@@ -363,16 +371,25 @@ class posix_process
 		switch (sig)
 		{
 			case SIGCONT:
-				status_ = resumed_status;
+				status_ = resumed_process_status;
 				break;
 			case SIGSTOP:
-				status_ = stopped_status;
+				status_ = stopped_process_status;
 				break;
 			case SIGTERM:
-				status_ = terminated_status;
+			case SIGKILL:
+				status_ = terminated_process_status;
+				break;
+			case SIGINT:
+				status_ = aborted_process_status;
 				break;
 			default:
-				status_ = aborted_status;
+				::sleep(zzz_secs_);
+				if (!this->alive())
+				{
+					status_ = aborted_process_status;
+				}
+				break;
 		}
 	}
 
@@ -381,7 +398,7 @@ class posix_process
 //	private: ::std::vector< ::std::string > args_; ///< The list of command arguments
 	private: bool async_; ///< A \c true value means that the parent does not block to wait for child termination
 	private: ::pid_t pid_; ///< The process identifier
-	private: status_category status_; ///< The current status of this process
+	private: process_status_category status_; ///< The current status of this process
 	private: int sig_; ///< The last signal sent to this process
 	private: int exit_status_; ///< The exit status of this process
 }; // posix_process
