@@ -34,6 +34,8 @@
 #define DCS_SYSTEM_PROCESS_STATUS_CATEGORY_HPP
 
 
+namespace dcs { namespace system {
+
 enum process_status_category
 {
 	aborted_process_status, ///< The process has been terminated (e.g., by a signal)
@@ -44,6 +46,8 @@ enum process_status_category
 	terminated_process_status, ///< The process execution is done
 	undefined_process_status ///< The process is in an undefined state
 };
+
+}} // Namespace dcs::system
 
 
 #endif // DCS_SYSTEM_PROCESS_STATUS_CATEGORY_HPP
