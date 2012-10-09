@@ -42,14 +42,22 @@
 //#endif // _POSIX_C_SOURCE
 
 
+#include <boost/smart_ptr.hpp>
 #include <cerrno>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/exception.hpp>
 #include <dcs/logging.hpp>
 #include <dcs/system/process_status_category.hpp>
+#ifdef __GNUC__
+# include <ext/stdio_filebuf.h>
+#else // __GNUC__
+# include <boost/iostreams/device/file_descriptor.hpp>
+# include <boost/iostreams/stream_buffer.hpp>
+#endif // __GNUC__
 #include <fcntl.h>
 #include <iterator>
 #include <sstream>
@@ -63,18 +71,23 @@
 #include <vector>
 
 
-
 namespace dcs { namespace system {
 
 class posix_process
 {
 	private: static const unsigned int zzz_secs_ = 5;
+#ifdef __GNUC__
+	private: typedef ::__gnu_cxx::stdio_filebuf<char> fd_streambuf_type;
+#else // __GNUC__
+	private: typedef ::boost::iostreams::file_descriptor_source fd_device_type;
+	private: typedef ::boost::iostreams::stream_buffer<fd_device_type> fd_streambuf_type;
+#endif // __GNUC__
 
 
 	public: explicit posix_process(::std::string const& cmd)
 	: cmd_(cmd),
 //	  args_(),
-	  async_(false),
+	  async_(true),
 	  pid_(-1),
 	  status_(undefined_process_status),
 	  sig_(-1),
@@ -98,12 +111,21 @@ class posix_process
 		// Wait for child termination to prevent zombies
 		try
 		{
-			this->wait();
+			if (this->alive())
+			{
+				this->wait();
+			}
+		}
+		catch (::std::exception const& e)
+		{
+			::std::ostringstream oss;
+			oss << "Failed to wait for command '" << cmd_ << "': " << e.what();
+			dcs::log_error(DCS_LOGGING_AT, oss.str());
 		}
 		catch (...)
 		{
 			::std::ostringstream oss;
-			oss << "Failed to wait for command '" << cmd_ << "'";
+			oss << "Failed to wait for command '" << cmd_ << "': Unknown reason";
 			dcs::log_error(DCS_LOGGING_AT, oss.str());
 		}
 	}
@@ -113,9 +135,88 @@ class posix_process
 		async_ = val;
 	}
 
-	public: template <typename FwdIterT>
-			void run(FwdIterT arg_first, FwdIterT arg_last)
+	public: ::std::ostream& input_stream()
 	{
+		return *p_ios_;
+	}
+
+	public: ::std::istream& output_stream()
+	{
+		return *p_ois_;
+	}
+
+	public: ::std::istream& error_stream()
+	{
+		return *p_eis_;
+	}
+
+	public: void run()
+	{
+		::std::vector< ::std::string > args;
+		run(args.begin(), args.end());
+	}
+
+	public: template <typename FwdIterT>
+			 void run(FwdIterT arg_first, FwdIterT arg_last, bool pipe_in = false, bool pipe_out = false, bool pipe_err = false)
+	{
+		const ::std::size_t pipe_in_child_rd(0);
+		const ::std::size_t pipe_in_parent_wr(1);
+		const ::std::size_t pipe_out_parent_rd(2);
+		const ::std::size_t pipe_out_child_wr(3);
+		const ::std::size_t pipe_err_parent_rd(4);
+		const ::std::size_t pipe_err_child_wr(5);
+
+		// Create two pipes to let to communicate with AMPL.
+		// Specifically, we want to write the input into AMPL (through the producer)
+		// and to read the output from AMPL (through the consumer).
+		// So, the child process read its input from the parent and write its output on
+		// the pipe; while the parent write the child's input on the pipe and read its
+		// input from the child.
+		//
+		// pipefd:
+		// - [0,1]: Where the parent write to and the child read from (child's stdin).
+		// - [2,3]: Where the parent read from and the child write to (child's stdout).
+		// - [4,5]: Where the parent read from and the child write to (child's stderr).
+		int pipefd[6];
+
+		if (pipe_in)
+		{
+//DCS_DEBUG_TRACE("HERE.1");//XXX
+			if (::pipe(&pipefd[0]) == -1)
+			{
+				::std::ostringstream oss;
+				oss << "Call to pipe(2) failed for command: '" << cmd_ << "' and for input production: " << ::strerror(errno);
+
+				DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+			}
+		}
+		if (pipe_out)
+		{
+			if (::pipe(&pipefd[2]) == -1)
+			{
+				::std::ostringstream oss;
+				oss << "Call to pipe(2) failed for command: '" << cmd_ << "' and for output consumption: " << ::strerror(errno);
+
+				DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+			}
+		}
+		if (pipe_err)
+		{
+			if (::pipe(&pipefd[4]) == -1)
+			{
+				::std::ostringstream oss;
+				oss << "Call to pipe(2) failed for command: '" << cmd_ << "' and for error consumption: " << ::strerror(errno);
+
+				DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+			}
+		}
+
+		// Spawn a new process
+
+		// Between fork() and execve() only async-signal-safe functions
+		// must be called if multithreaded applications should be supported.
+		// That's why the following code is executed before fork() is called.
+ 
 		::pid_t pid = ::fork();
 
 		if (pid == -1)
@@ -169,6 +270,88 @@ class posix_process
 				maxdescs = 1024;
 			}
 
+			::std::vector<bool> close_fd(maxdescs, true);
+
+			// Associate the child's stdin/stdout to the pipe read/write fds.
+			close_fd[STDIN_FILENO] = false;
+			close_fd[STDOUT_FILENO] = false;
+#ifdef DCS_DEBUG
+			// Keep standard error open for debug
+			close_fd[STDERR_FILENO] = false;
+#endif // DCS_DEBUG
+			if (pipe_in)
+			{
+				if (pipefd[pipe_in_child_rd] != STDIN_FILENO)
+				{
+					if (::dup2(pipefd[pipe_in_child_rd], STDIN_FILENO) != STDIN_FILENO)
+					{
+						::std::ostringstream oss;
+						oss << "Call to dup2(2) failed for command '" << cmd_ << "': " << ::strerror(errno);
+
+						DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+					}
+				}
+				else
+				{
+					if (pipefd[pipe_in_child_rd] < maxdescs)
+					{
+						close_fd[pipefd[pipe_in_child_rd]] = false;
+					}
+					else
+					{
+						::close(pipefd[pipe_in_child_rd]);
+					}
+				}
+			}
+			if (pipe_out)
+			{
+				if (pipefd[pipe_out_child_wr] != STDOUT_FILENO)
+				{
+					if (::dup2(pipefd[pipe_out_child_wr], STDOUT_FILENO) != STDOUT_FILENO)
+					{
+						::std::ostringstream oss;
+						oss << "Call to dup2(2) failed for command '" << cmd_ << "': " << ::strerror(errno);
+
+						DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+					}
+				}
+				else
+				{
+					if (pipefd[pipe_out_child_wr] < maxdescs)
+					{
+						close_fd[pipefd[pipe_out_child_wr]] = false;
+					}
+					else
+					{
+						::close(pipefd[pipe_out_child_wr]);
+					}
+				}
+			}
+			if (pipe_err)
+			{
+				if (pipefd[pipe_err_child_wr] != STDERR_FILENO)
+				{
+					if (::dup2(pipefd[pipe_err_child_wr], STDERR_FILENO) != STDERR_FILENO)
+					{
+						::std::ostringstream oss;
+						oss << "Call to dup2(2) failed for command '" << cmd_ << "': " << ::strerror(errno);
+
+						DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+					}
+				}
+				else
+				{
+					if (pipefd[pipe_err_child_wr] < maxdescs)
+					{
+						close_fd[pipefd[pipe_err_child_wr]] = false;
+					}
+					else
+					{
+						::close(pipefd[pipe_err_child_wr]);
+					}
+				}
+			}
+
 			// Check if the command already has path information
 			::std::string cmd_path;
 			::std::string cmd_name;
@@ -199,15 +382,10 @@ class posix_process
 			// Close unused file descriptors
 			for (int fd = 0; fd < maxdescs; ++fd)
 			{
-#ifdef DCS_DEBUG
-				// Keep standard error open for debug
-				if (fd != STDERR_FILENO)
+				if (close_fd[fd])
 				{
 					::close(fd);
 				}
-#else // DCS_DEBUG
-				::close(fd);
-#endif // DCS_DEBUG
 			}
 
 			// Run the command
@@ -224,6 +402,66 @@ class posix_process
 		}
 
 		// The parent
+
+		if (pipe_in)
+		{
+			::close(pipefd[pipe_in_child_rd]);
+		}
+		if (pipe_out)
+		{
+			::close(pipefd[pipe_out_child_wr]);
+		}
+		if (pipe_err)
+		{
+			::close(pipefd[pipe_err_child_wr]);
+		}
+
+#ifdef __GNUC__
+		if (pipe_in)
+		{
+			p_in_wrbuf_ = ::boost::make_shared<fd_streambuf_type>(pipefd[pipe_in_parent_wr], ::std::ios::out);
+		}
+		if (pipe_out)
+		{
+			p_out_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(pipefd[pipe_out_parent_rd], ::std::ios::in);
+		}
+		if (pipe_err)
+		{
+			p_err_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(pipefd[pipe_err_parent_rd], ::std::ios::in);
+		}
+#else // __GNUC__
+		if (pipe_in)
+		{
+			fd_device_type in_wrdev(pipefd[pipe_in_parent_wr], ::boost::iostreams::close_handle);
+			p_in_wrbuf_ = ::boost::make_shared<fd_streambuf_type>(in_wrdev);
+		}
+		if (pipe_out)
+		{
+			fd_device_type out_rddev(pipefd[pipe_out_parent_rd], ::boost::iostreams::close_handle);
+			p_out_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(out_rddev);
+		}
+		if (pipe_err)
+		{
+			fd_device_type err_rddev(pipefd[pipe_err_parent_rd], ::boost::iostreams::close_handle);
+			p_err_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(err_rddev);
+		}
+#endif // __GNUC__
+		if (pipe_in)
+		{
+			p_ios_ = ::boost::make_shared< ::std::ostream >(p_in_wrbuf_.get());
+		}
+		if (pipe_out)
+		{
+			p_ois_ = ::boost::make_shared< ::std::istream >(p_out_rdbuf_.get());
+		}
+		if (pipe_err)
+		{
+			p_eis_ = ::boost::make_shared< ::std::istream >(p_err_rdbuf_.get());
+		}
+		// Write to the child process
+//		producer(os);
+		// Read the input from the child process
+//		consumer(is);
 
 		pid_ = pid;
 		status_ = running_process_status;
@@ -406,6 +644,12 @@ class posix_process
 	private: process_status_category status_; ///< The current status of this process
 	private: int sig_; ///< The last signal sent to this process
 	private: int exit_status_; ///< The exit status of this process
+	private: ::boost::shared_ptr<fd_streambuf_type> p_in_wrbuf_;
+	private: ::boost::shared_ptr<fd_streambuf_type> p_out_rdbuf_;
+	private: ::boost::shared_ptr<fd_streambuf_type> p_err_rdbuf_;
+	private: ::boost::shared_ptr< ::std::ostream > p_ios_;
+	private: ::boost::shared_ptr< ::std::istream > p_ois_;
+	private: ::boost::shared_ptr< ::std::istream > p_eis_;
 }; // posix_process
 
 }} // Namespace dcs::system
