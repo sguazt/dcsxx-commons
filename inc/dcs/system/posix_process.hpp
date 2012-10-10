@@ -43,6 +43,7 @@
 
 
 #include <boost/smart_ptr.hpp>
+#include <boost/utility.hpp>
 #include <cerrno>
 #include <cstddef>
 #include <cstdlib>
@@ -73,7 +74,7 @@
 
 namespace dcs { namespace system {
 
-class posix_process
+class posix_process: private ::boost::noncopyable
 {
 	private: static const unsigned int zzz_secs_ = 5;
 #ifdef __GNUC__
