@@ -84,6 +84,16 @@ class posix_process
 #endif // __GNUC__
 
 
+	public: explicit posix_process()
+	: cmd_(),
+	  async_(true),
+	  pid_(-1),
+	  status_(undefined_process_status),
+	  sig_(-1),
+	  exit_status_(EXIT_SUCCESS)
+	{
+	}
+
 	public: explicit posix_process(::std::string const& cmd)
 	: cmd_(cmd),
 //	  args_(),
@@ -130,9 +140,24 @@ class posix_process
 		}
 	}
 
+	public: void command(::std::string const& cmd)
+	{
+		cmd_ = cmd;
+	}
+
+	public: ::std::string command() const
+	{
+		return cmd_;
+	}
+
 	public: void asynch(bool val)
 	{
 		async_ = val;
+	}
+
+	public: bool asynch() const
+	{
+		return async_;
 	}
 
 	public: ::std::ostream& input_stream()
