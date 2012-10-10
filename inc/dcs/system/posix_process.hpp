@@ -580,10 +580,17 @@ class posix_process
 
 	public: void terminate()
 	{
-		// pre: process must be running
-		DCS_ASSERT(status_ == running_process_status,
-				   DCS_EXCEPTION_THROW(::std::runtime_error,
-									   "Cannot stop a process that is not running"));
+//		// pre: process must be running
+//		DCS_ASSERT(status_ == running_process_status,
+//				   DCS_EXCEPTION_THROW(::std::runtime_error,
+//									   "Cannot stop a process that is not running"));
+
+		if (status_ != running_process_status
+			|| status_ != resume_process_status
+			|| status_ != stopped_process_status)
+		{
+			return;
+		}
 
 		this->kill(SIGTERM);
 		::sleep(zzz_secs_);
