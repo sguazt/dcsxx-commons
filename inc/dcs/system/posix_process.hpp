@@ -586,7 +586,7 @@ class posix_process
 //									   "Cannot stop a process that is not running"));
 
 		if (status_ != running_process_status
-			|| status_ != resume_process_status
+			|| status_ != resumed_process_status
 			|| status_ != stopped_process_status)
 		{
 			return;
