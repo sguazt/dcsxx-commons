@@ -162,16 +162,61 @@ class posix_process
 
 	public: ::std::ostream& input_stream()
 	{
+		// pre: not null
+		DCS_ASSERT(p_ios_,
+				   DCS_EXCEPTION_THROW(::std::runtime_error,
+									   "Invalid pointer to input stream"));
+
+		return *p_ios_;
+	}
+
+	public: ::std::ostream const& input_stream() const
+	{
+		// pre: not null
+		DCS_ASSERT(p_ios_,
+				   DCS_EXCEPTION_THROW(::std::runtime_error,
+									   "Invalid pointer to input stream"));
+
 		return *p_ios_;
 	}
 
 	public: ::std::istream& output_stream()
 	{
+		// pre: not null
+		DCS_ASSERT(p_ois_,
+				   DCS_EXCEPTION_THROW(::std::runtime_error,
+									   "Invalid pointer to output stream"));
+
+		return *p_ois_;
+	}
+
+	public: ::std::istream const& output_stream() const
+	{
+		// pre: not null
+		DCS_ASSERT(p_ois_,
+				   DCS_EXCEPTION_THROW(::std::runtime_error,
+									   "Invalid pointer to output stream"));
+
 		return *p_ois_;
 	}
 
 	public: ::std::istream& error_stream()
 	{
+		// pre: not null
+		DCS_ASSERT(p_eis_,
+				   DCS_EXCEPTION_THROW(::std::runtime_error,
+									   "Invalid pointer to error stream"));
+
+		return *p_eis_;
+	}
+
+	public: ::std::istream const& error_stream() const
+	{
+		// pre: not null
+		DCS_ASSERT(p_eis_,
+				   DCS_EXCEPTION_THROW(::std::runtime_error,
+									   "Invalid pointer to error stream"));
+
 		return *p_eis_;
 	}
 
@@ -206,7 +251,6 @@ class posix_process
 
 		if (pipe_in)
 		{
-//DCS_DEBUG_TRACE("HERE.1");//XXX
 			if (::pipe(&pipefd[0]) == -1)
 			{
 				::std::ostringstream oss;
@@ -311,20 +355,20 @@ class posix_process
 					if (::dup2(pipefd[pipe_in_child_rd], STDIN_FILENO) != STDIN_FILENO)
 					{
 						::std::ostringstream oss;
-						oss << "Call to dup2(2) failed for command '" << cmd_ << "': " << ::strerror(errno);
+						oss << "Call to dup2(2) failed for command '" << cmd_ << "' during connection to standard input: " << ::strerror(errno);
 
 						DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 					}
 				}
 				else
 				{
-					if (pipefd[pipe_in_child_rd] < maxdescs)
+					if (STDIN_FILENO < maxdescs)
 					{
-						close_fd[pipefd[pipe_in_child_rd]] = false;
+						close_fd[STDIN_FILENO] = false;
 					}
 					else
 					{
-						::close(pipefd[pipe_in_child_rd]);
+						::close(STDIN_FILENO);
 					}
 				}
 			}
@@ -335,20 +379,20 @@ class posix_process
 					if (::dup2(pipefd[pipe_out_child_wr], STDOUT_FILENO) != STDOUT_FILENO)
 					{
 						::std::ostringstream oss;
-						oss << "Call to dup2(2) failed for command '" << cmd_ << "': " << ::strerror(errno);
+						oss << "Call to dup2(2) failed for command '" << cmd_ << "' during connection to standard output: " << ::strerror(errno);
 
 						DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 					}
 				}
 				else
 				{
-					if (pipefd[pipe_out_child_wr] < maxdescs)
+					if (STDOUT_FILENO < maxdescs)
 					{
-						close_fd[pipefd[pipe_out_child_wr]] = false;
+						close_fd[STDOUT_FILENO] = false;
 					}
 					else
 					{
-						::close(pipefd[pipe_out_child_wr]);
+						::close(STDOUT_FILENO);
 					}
 				}
 			}
@@ -359,20 +403,20 @@ class posix_process
 					if (::dup2(pipefd[pipe_err_child_wr], STDERR_FILENO) != STDERR_FILENO)
 					{
 						::std::ostringstream oss;
-						oss << "Call to dup2(2) failed for command '" << cmd_ << "': " << ::strerror(errno);
+						oss << "Call to dup2(2) failed for command '" << cmd_ << "' during connection to standard error: " << ::strerror(errno);
 
 						DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 					}
 				}
 				else
 				{
-					if (pipefd[pipe_err_child_wr] < maxdescs)
+					if (STDERR_FILENO < maxdescs)
 					{
-						close_fd[pipefd[pipe_err_child_wr]] = false;
+						close_fd[STDERR_FILENO] = false;
 					}
 					else
 					{
-						::close(pipefd[pipe_err_child_wr]);
+						::close(STDERR_FILENO);
 					}
 				}
 			}
