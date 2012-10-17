@@ -74,7 +74,7 @@ export xmp_builddir := ./build
 export srcdirs := . #dcs dcs/config dcs/control dcs/math dcs/meta
 #export test_srcdirs := . dcs/des dcs/iterator dcs/math/la dcs/math/random dcs/math/stats dcs/util
 #export test_srcdirs := . dcs/algorithm dcs/iterator dcs/math/la dcs/math/random dcs/math/stats
-export test_srcdirs := . dcs/test dcs/test/algorithm dcs/test/iterator dcs/test/math/random dcs/test/math/stats
+export test_srcdirs := . dcs/test dcs/test/algorithm dcs/test/iterator dcs/test/math/random dcs/test/math/stats dcs/test/system
 export xmp_srcdirs := . dcs/des dcs/des/simple_simulator dcs/des dcs/des/bank
 export libdirs :=
 export test_libdirs :=
@@ -84,7 +84,7 @@ export test_incdirs := $(test_srcdir)/inc
 export xmp_incdirs := $(xmpdir)/inc
 export libs := m lapack
 #export test_libs := boost_unit_test_framework
-export test_libs := 
+export test_libs :=
 export xmp_libs := 
 
 
