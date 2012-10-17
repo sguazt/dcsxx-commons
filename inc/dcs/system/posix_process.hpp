@@ -677,13 +677,14 @@ class posix_process: private ::boost::noncopyable
 	/// Tells if this process is still running.
 	public: bool alive() const
 	{
-		// pre: valid process
-		DCS_ASSERT(pid_ != -1,
-				   DCS_EXCEPTION_THROW(::std::runtime_error,
-									   "Invalid PID"));
+//		// pre: valid process
+//		DCS_ASSERT(pid_ != -1,
+//				   DCS_EXCEPTION_THROW(::std::runtime_error,
+//									   "Invalid PID"));
 
 		// Quick alive test: return FALSE is the process has already terminated
-		if (status_ == terminated_process_status
+		if (pid_ == -1
+			|| status_ == terminated_process_status
 			|| status_ == aborted_process_status
 			|| status_ == failed_process_status)
 		{
