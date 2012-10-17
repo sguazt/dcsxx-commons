@@ -146,21 +146,31 @@ class posix_process: private ::boost::noncopyable
 		cmd_ = cmd;
 	}
 
+	/// Returns the command name (without arguments).
 	public: ::std::string command() const
 	{
 		return cmd_;
 	}
 
+	/**
+	 * \brief Allows to set if the execution of this process will block
+	 *  (\c false value) or not (\c true value) the parent process.
+	 */
 	public: void asynch(bool val)
 	{
 		async_ = val;
 	}
 
+	/**
+	 * \brief Tells if the execution of this process will block (\c false value)
+	 *  or not (\c true value) the parent process.
+	 */
 	public: bool asynch() const
 	{
 		return async_;
 	}
 
+	/// Returns the stream connected to the standard input of this process. 
 	public: ::std::ostream& input_stream()
 	{
 		// pre: not null
@@ -171,6 +181,7 @@ class posix_process: private ::boost::noncopyable
 		return *p_ios_;
 	}
 
+	/// Returns the stream connected to the standard input of this process. 
 	public: ::std::ostream const& input_stream() const
 	{
 		// pre: not null
@@ -181,6 +192,7 @@ class posix_process: private ::boost::noncopyable
 		return *p_ios_;
 	}
 
+	/// Returns the stream connected to the standard output of this process. 
 	public: ::std::istream& output_stream()
 	{
 		// pre: not null
@@ -191,6 +203,7 @@ class posix_process: private ::boost::noncopyable
 		return *p_ois_;
 	}
 
+	/// Returns the stream connected to the standard output of this process. 
 	public: ::std::istream const& output_stream() const
 	{
 		// pre: not null
@@ -201,6 +214,7 @@ class posix_process: private ::boost::noncopyable
 		return *p_ois_;
 	}
 
+	/// Returns the stream connected to the standard error of this process. 
 	public: ::std::istream& error_stream()
 	{
 		// pre: not null
@@ -211,6 +225,7 @@ class posix_process: private ::boost::noncopyable
 		return *p_eis_;
 	}
 
+	/// Returns the stream connected to the standard error of this process. 
 	public: ::std::istream const& error_stream() const
 	{
 		// pre: not null
@@ -221,12 +236,20 @@ class posix_process: private ::boost::noncopyable
 		return *p_eis_;
 	}
 
+	/**
+	 * \brief Runs this process (without arguments and without connecting to the
+	 *  standard input/output/error).
+	 */
 	public: void run()
 	{
 		::std::vector< ::std::string > args;
 		run(args.begin(), args.end());
 	}
 
+	/**
+	 * \brief Runs this process with the given argument and optionally by
+	 *  connecting to the standard input/output/error.
+	 */
 	public: template <typename FwdIterT>
 			 void run(FwdIterT arg_first, FwdIterT arg_last, bool pipe_in = false, bool pipe_out = false, bool pipe_err = false)
 	{
@@ -542,6 +565,7 @@ class posix_process: private ::boost::noncopyable
 		}
 	}
 
+	/// Waits for the termination of this process.
 	public: void wait()
 	{
 		int wstatus;
@@ -598,11 +622,13 @@ class posix_process: private ::boost::noncopyable
 		}
 	}
 
+	/// Returns the life status of this process.
 	public: process_status_category status() const
 	{
 		return status_;
 	}
 
+	/// Stops the execution of this process (without terminating it).
 	public: void stop()
 	{
 		// pre: process must be running
@@ -610,9 +636,10 @@ class posix_process: private ::boost::noncopyable
 				   DCS_EXCEPTION_THROW(::std::runtime_error,
 									   "Cannot stop a process that is not running"));
 
-		this->kill(SIGSTOP);
+		this->signal(SIGSTOP);
 	}
 
+	/// Resumes the execution of this stopped process.
 	public: void resume()
 	{
 		// pre: process must have been stopped
@@ -620,9 +647,10 @@ class posix_process: private ::boost::noncopyable
 				   DCS_EXCEPTION_THROW(::std::runtime_error,
 									   "Cannot resume a process that has not been stopped"));
 
-		this->kill(SIGCONT);
+		this->signal(SIGCONT);
 	}
 
+	/// Terminates the execution of this process
 	public: void terminate()
 	{
 //		// pre: process must be running
@@ -637,19 +665,39 @@ class posix_process: private ::boost::noncopyable
 			return;
 		}
 
-		this->kill(SIGTERM);
+		this->signal(SIGTERM);
 		::sleep(zzz_secs_);
 		if (this->alive())
 		{
-			this->kill(SIGKILL);
+			this->signal(SIGKILL);
 		}
 		this->wait();
 	}
 
+	/// Tells if this process is still running.
 	public: bool alive() const
 	{
+		// pre: valid process
+		DCS_ASSERT(pid_ != -1,
+				   DCS_EXCEPTION_THROW(::std::runtime_error,
+									   "Invalid PID"));
+
+		// Quick alive test: return FALSE is the process has already terminated
+		if (status_ == terminated_process_status
+			|| status_ == aborted_process_status
+			|| status_ == failed_process_status)
+		{
+			return false;
+		}
+
+		// From kill(2) man page:
+		// "...If sig is 0, then no signal is sent, but error checking is still
+		//  performed; this can be used to check for the existence of a process
+		//  ID or process group ID..."
+
 		if (::kill(pid_, 0) == -1)
 		{
+			// Note: if errno == ESRCH => The pid does not exist (see kill(2))
 			if (errno != ESRCH)
 			{
 				::std::ostringstream oss;
@@ -664,7 +712,8 @@ class posix_process: private ::boost::noncopyable
 		return true;
 	}
 
-	public: void kill(int sig)
+	/// Sends signal \a sig to this process.
+	public: void signal(int sig)
 	{
 		// pre: sig >= 0
 		DCS_ASSERT(sig >= 0,
@@ -673,9 +722,14 @@ class posix_process: private ::boost::noncopyable
 
 		// signal 0 has a special meaning: it can be used to check if a process
 		// exists without actually sending any signal to it.
-		// To send such a signal, use method \c exist.
+		// To send such a signal, use method \c alive.
 		if (sig == 0)
 		{
+			if (!this->alive())
+			{
+				sig_ = 0;
+				status_ = terminated_process_status;
+			}
 			return;
 		}
 
