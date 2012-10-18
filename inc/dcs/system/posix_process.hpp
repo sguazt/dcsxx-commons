@@ -83,6 +83,7 @@ class posix_process: private ::boost::noncopyable
 	private: typedef ::boost::iostreams::file_descriptor_source fd_device_type;
 	private: typedef ::boost::iostreams::stream_buffer<fd_device_type> fd_streambuf_type;
 #endif // __GNUC__
+	public: typedef ::pid_t pid_type;
 
 
 	public: explicit posix_process()
@@ -168,6 +169,12 @@ class posix_process: private ::boost::noncopyable
 	public: bool asynch() const
 	{
 		return async_;
+	}
+
+	/// Returns the identifier of this process.
+	public: pid_type pid() const
+	{
+		return pid_;
 	}
 
 	/// Returns the stream connected to the standard input of this process. 
@@ -310,7 +317,7 @@ class posix_process: private ::boost::noncopyable
 		// must be called if multithreaded applications should be supported.
 		// That's why the following code is executed before fork() is called.
  
-		::pid_t pid = ::fork();
+		pid_type pid = ::fork();
 
 		if (pid == -1)
 		{
@@ -840,7 +847,7 @@ class posix_process: private ::boost::noncopyable
 	private: ::std::string cmd_; ///< The command path
 //	private: ::std::vector< ::std::string > args_; ///< The list of command arguments
 	private: bool async_; ///< A \c true value means that the parent does not block to wait for child termination
-	private: ::pid_t pid_; ///< The process identifier
+	private: pid_type pid_; ///< The process identifier
 	private: mutable process_status_category status_; ///< The current status of this process
 	private: mutable int sig_; ///< The last signal sent to this process
 	private: mutable int exit_status_; ///< The exit status of this process
