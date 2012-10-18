@@ -739,7 +739,7 @@ class posix_process: private ::boost::noncopyable
 	}
 
 	/// Waits for the termination of this process.
-	private: void true_wait(bool block)
+	private: void true_wait(bool block) const
 	{
 		int wstatus;
 
@@ -842,8 +842,8 @@ class posix_process: private ::boost::noncopyable
 	private: bool async_; ///< A \c true value means that the parent does not block to wait for child termination
 	private: ::pid_t pid_; ///< The process identifier
 	private: mutable process_status_category status_; ///< The current status of this process
-	private: int sig_; ///< The last signal sent to this process
-	private: int exit_status_; ///< The exit status of this process
+	private: mutable int sig_; ///< The last signal sent to this process
+	private: mutable int exit_status_; ///< The exit status of this process
 	private: ::boost::shared_ptr<fd_streambuf_type> p_in_wrbuf_;
 	private: ::boost::shared_ptr<fd_streambuf_type> p_out_rdbuf_;
 	private: ::boost::shared_ptr<fd_streambuf_type> p_err_rdbuf_;
