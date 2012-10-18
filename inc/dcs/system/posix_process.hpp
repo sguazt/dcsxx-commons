@@ -745,7 +745,7 @@ class posix_process: private ::boost::noncopyable
 
 		int opts(WUNTRACED | WCONTINUED);
 
-		if (block)
+		if (!block)
 		{
 			opts |= WNOHANG;
 		}
