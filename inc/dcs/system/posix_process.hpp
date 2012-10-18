@@ -568,9 +568,191 @@ class posix_process: private ::boost::noncopyable
 	/// Waits for the termination of this process.
 	public: void wait()
 	{
+		if (status_ == terminated_process_status
+			|| status_ == aborted_process_status
+			|| status_ == failed_process_status)
+		{
+			return;
+		}
+
+		this->true_wait(true);
+
+		status_ = terminated_process_status;
+	}
+
+	/// Returns the life status of this process.
+	public: process_status_category status() const
+	{
+		return status_;
+	}
+
+	/// Stops the execution of this process (without terminating it).
+	public: void stop()
+	{
+		// pre: process must be running
+		DCS_ASSERT(status_ == running_process_status,
+				   DCS_EXCEPTION_THROW(::std::runtime_error,
+									   "Cannot stop a process that is not running"));
+
+		this->signal(SIGSTOP);
+	}
+
+	/// Resumes the execution of this stopped process.
+	public: void resume()
+	{
+		// pre: process must have been stopped
+		DCS_ASSERT(status_ == stopped_process_status,
+				   DCS_EXCEPTION_THROW(::std::runtime_error,
+									   "Cannot resume a process that has not been stopped"));
+
+		this->signal(SIGCONT);
+	}
+
+	/// Terminates the execution of this process
+	public: void terminate(bool force = false)
+	{
+//		// pre: process must be running
+//		DCS_ASSERT(status_ == running_process_status,
+//				   DCS_EXCEPTION_THROW(::std::runtime_error,
+//									   "Cannot stop a process that is not running"));
+
+		if (status_ != running_process_status
+			&& status_ != resumed_process_status
+			&& status_ != stopped_process_status)
+		{
+			return;
+		}
+
+		this->signal(SIGTERM);
+		if (force && this->alive())
+		{
+			this->signal(SIGKILL);
+		}
+//		this->true_wait(true);
+	}
+
+	/// Tells if this process is still running.
+	public: bool alive() const
+	{
+//		// pre: valid process
+//		DCS_ASSERT(pid_ != -1,
+//				   DCS_EXCEPTION_THROW(::std::runtime_error,
+//									   "Invalid PID"));
+
+		// Quick alive test: return FALSE is the process has already terminated
+		if (pid_ == -1
+			|| status_ == terminated_process_status
+			|| status_ == aborted_process_status
+			|| status_ == failed_process_status)
+		{
+			return false;
+		}
+
+		if (this->true_alive())
+		{
+			return true;
+		}
+
+		status_ = terminated_process_status;
+
+		return false;
+	}
+
+	/// Sends signal \a sig to this process.
+	public: void signal(int sig)
+	{
+		// pre: sig >= 0
+		DCS_ASSERT(sig >= 0,
+				   DCS_EXCEPTION_THROW(::std::invalid_argument,
+									   "Invalid signal number"));
+
+		if (status_ != running_process_status
+			&& status_ != resumed_process_status
+			&& status_ != stopped_process_status)
+		{
+			return;
+		}
+
+		// signal 0 has a special meaning: it can be used to check if a process
+		// exists without actually sending any signal to it.
+		// To send such a signal, use method \c alive.
+		if (sig == 0)
+		{
+			if (!this->true_alive())
+			{
+				sig_ = 0;
+				//status_ = terminated_process_status;
+			}
+			return;
+		}
+
+		if (::kill(pid_, sig) == -1)
+		{
+			::std::ostringstream oss;
+			oss << "Call to kill(2) failed for command '" << cmd_ << "' and signal " << sig << ": " << ::strerror(errno);
+
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+		}
+
+		sig_ = sig;
+		bool check_alive(false);
+		switch (sig)
+		{
+			case SIGCONT:
+				status_ = resumed_process_status;
+				break;
+			case SIGSTOP:
+				status_ = stopped_process_status;
+				break;
+			case SIGTERM:
+			case SIGKILL:
+			case SIGINT:
+			default:
+				check_alive = true;
+				break;
+		}
+
+		if (check_alive)
+		{
+			this->true_wait(false);
+
+			const ::std::size_t num_trials(5);
+			bool is_alive(true);
+			for (::std::size_t trial = 0; trial < num_trials && is_alive; ++trial)
+			{
+				is_alive = this->true_alive();
+				if (is_alive)
+				{
+					::sleep(zzz_secs_);
+				}
+			}
+			if (!is_alive)
+			{
+				status_ = aborted_process_status;
+			}
+			else
+			{
+				//FIXME: What we can do?
+				::std::ostringstream oss;
+				oss << "Command '" << cmd_ << "' signaled with signal '" << sig_ << "' is still alive";
+				dcs::log_warn(DCS_LOGGING_AT, oss.str());
+			}
+		}
+	}
+
+	/// Waits for the termination of this process.
+	private: void true_wait(bool block)
+	{
 		int wstatus;
 
-		if (::waitpid(pid_, &wstatus, WUNTRACED | WCONTINUED) == -1)
+		int opts(WUNTRACED | WCONTINUED);
+
+		if (block)
+		{
+			opts |= WNOHANG;
+		}
+
+		if (::waitpid(pid_, &wstatus, opts) == -1)
 		{
 			::std::ostringstream oss;
 			oss << "Call to waitpid(2) failed for command '" << cmd_ << "': " << ::strerror(errno);
@@ -622,75 +804,9 @@ class posix_process: private ::boost::noncopyable
 		}
 	}
 
-	/// Returns the life status of this process.
-	public: process_status_category status() const
+	/// Tells if this process is still alive.
+	private: bool true_alive() const
 	{
-		return status_;
-	}
-
-	/// Stops the execution of this process (without terminating it).
-	public: void stop()
-	{
-		// pre: process must be running
-		DCS_ASSERT(status_ == running_process_status,
-				   DCS_EXCEPTION_THROW(::std::runtime_error,
-									   "Cannot stop a process that is not running"));
-
-		this->signal(SIGSTOP);
-	}
-
-	/// Resumes the execution of this stopped process.
-	public: void resume()
-	{
-		// pre: process must have been stopped
-		DCS_ASSERT(status_ == stopped_process_status,
-				   DCS_EXCEPTION_THROW(::std::runtime_error,
-									   "Cannot resume a process that has not been stopped"));
-
-		this->signal(SIGCONT);
-	}
-
-	/// Terminates the execution of this process
-	public: void terminate()
-	{
-//		// pre: process must be running
-//		DCS_ASSERT(status_ == running_process_status,
-//				   DCS_EXCEPTION_THROW(::std::runtime_error,
-//									   "Cannot stop a process that is not running"));
-
-		if (status_ != running_process_status
-			|| status_ != resumed_process_status
-			|| status_ != stopped_process_status)
-		{
-			return;
-		}
-
-		this->signal(SIGTERM);
-		::sleep(zzz_secs_);
-		if (this->alive())
-		{
-			this->signal(SIGKILL);
-		}
-		this->wait();
-	}
-
-	/// Tells if this process is still running.
-	public: bool alive() const
-	{
-//		// pre: valid process
-//		DCS_ASSERT(pid_ != -1,
-//				   DCS_EXCEPTION_THROW(::std::runtime_error,
-//									   "Invalid PID"));
-
-		// Quick alive test: return FALSE is the process has already terminated
-		if (pid_ == -1
-			|| status_ == terminated_process_status
-			|| status_ == aborted_process_status
-			|| status_ == failed_process_status)
-		{
-			return false;
-		}
-
 		// From kill(2) man page:
 		// "...If sig is 0, then no signal is sent, but error checking is still
 		//  performed; this can be used to check for the existence of a process
@@ -707,65 +823,14 @@ class posix_process: private ::boost::noncopyable
 				DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 			}
 
+			// Set the status to a termination status. It will possibly changed
+			// by some higher-level function (e.g., signal)
+			status_ = terminated_process_status;
+
 			return false;
 		}
 
 		return true;
-	}
-
-	/// Sends signal \a sig to this process.
-	public: void signal(int sig)
-	{
-		// pre: sig >= 0
-		DCS_ASSERT(sig >= 0,
-				   DCS_EXCEPTION_THROW(::std::invalid_argument,
-									   "Invalid signal number"));
-
-		// signal 0 has a special meaning: it can be used to check if a process
-		// exists without actually sending any signal to it.
-		// To send such a signal, use method \c alive.
-		if (sig == 0)
-		{
-			if (!this->alive())
-			{
-				sig_ = 0;
-				status_ = terminated_process_status;
-			}
-			return;
-		}
-
-		if (::kill(pid_, sig) == -1)
-		{
-			::std::ostringstream oss;
-			oss << "Call to kill(2) failed for command '" << cmd_ << "' and signal " << sig << ": " << ::strerror(errno);
-
-			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
-		}
-
-		sig_ = sig;
-		switch (sig)
-		{
-			case SIGCONT:
-				status_ = resumed_process_status;
-				break;
-			case SIGSTOP:
-				status_ = stopped_process_status;
-				break;
-			case SIGTERM:
-			case SIGKILL:
-				status_ = terminated_process_status;
-				break;
-			case SIGINT:
-				status_ = aborted_process_status;
-				break;
-			default:
-				::sleep(zzz_secs_);
-				if (!this->alive())
-				{
-					status_ = aborted_process_status;
-				}
-				break;
-		}
 	}
 
 
@@ -773,7 +838,7 @@ class posix_process: private ::boost::noncopyable
 //	private: ::std::vector< ::std::string > args_; ///< The list of command arguments
 	private: bool async_; ///< A \c true value means that the parent does not block to wait for child termination
 	private: ::pid_t pid_; ///< The process identifier
-	private: process_status_category status_; ///< The current status of this process
+	private: mutable process_status_category status_; ///< The current status of this process
 	private: int sig_; ///< The last signal sent to this process
 	private: int exit_status_; ///< The exit status of this process
 	private: ::boost::shared_ptr<fd_streambuf_type> p_in_wrbuf_;
