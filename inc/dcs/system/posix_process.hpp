@@ -714,8 +714,6 @@ class posix_process: private ::boost::noncopyable
 
 		if (check_alive)
 		{
-			this->true_wait(false);
-
 			const ::std::size_t num_trials(5);
 			bool is_alive(true);
 			for (::std::size_t trial = 0; trial < num_trials && is_alive; ++trial)
@@ -807,6 +805,11 @@ class posix_process: private ::boost::noncopyable
 	/// Tells if this process is still alive.
 	private: bool true_alive() const
 	{
+		// Make sure to remove a <defunct> process, in order to avoid
+		// false-positives (i.e., a call to kill(2) which return -1 with
+		// errno==ESRCH due to the presence of a <defunct> process).
+		this->true_wait(false);
+
 		// From kill(2) man page:
 		// "...If sig is 0, then no signal is sent, but error checking is still
 		//  performed; this can be used to check for the existence of a process
