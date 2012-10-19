@@ -76,7 +76,7 @@ namespace dcs { namespace system {
 
 class posix_process: private ::boost::noncopyable
 {
-	private: static const unsigned int zzz_secs_ = 5;
+	private: typedef posix_process self_type;
 #ifdef __GNUC__
 	private: typedef ::__gnu_cxx::stdio_filebuf<char> fd_streambuf_type;
 #else // __GNUC__
@@ -86,7 +86,8 @@ class posix_process: private ::boost::noncopyable
 	public: typedef ::pid_t pid_type;
 
 
-	public: static const pid_type invalid_pid = -1;
+	public: static const pid_type invalid_pid = -2;
+	private: static const unsigned int zzz_secs = 5;
 
 
 	public: explicit posix_process()
@@ -585,7 +586,7 @@ class posix_process: private ::boost::noncopyable
 			return;
 		}
 
-		this->true_wait(true, true);
+		this->true_wait(true);
 
 		status_ = terminated_process_status;
 	}
@@ -636,21 +637,20 @@ class posix_process: private ::boost::noncopyable
 	/// Tells if this process is still running.
 	public: bool alive() const
 	{
-		// Quick alive test: return FALSE is the process has already terminated
-		if (pid_ == invalid_pid
-			|| status_ == terminated_process_status
-			|| status_ == aborted_process_status
-			|| status_ == failed_process_status)
+		// Quick test: return FALSE is the process has already terminated
+		if (pid_ == invalid_pid)
 		{
 			return false;
 		}
 
-		if (this->true_alive())
+		const_cast<self_type*>(this)->true_wait(false);
+
+		if (pid_ == invalid_pid)
 		{
-			return true;
+			return false;
 		}
 
-		return false;
+		return (pid_ == invalid_pid) ? false : true;
 	}
 
 	/// Sends signal \a sig to this process.
@@ -671,11 +671,8 @@ class posix_process: private ::boost::noncopyable
 		// To send such a signal, use method \c alive.
 		if (sig == 0)
 		{
-			if (!this->true_alive())
-			{
-				sig_ = 0;
-				//status_ = terminated_process_status;
-			}
+			//this->alive();
+			sig_ = 0;
 			return;
 		}
 
@@ -714,7 +711,7 @@ class posix_process: private ::boost::noncopyable
 				is_alive = this->alive();
 				if (is_alive)
 				{
-					::sleep(zzz_secs_);
+					::sleep(zzz_secs);
 				}
 			}
 			if (!is_alive)
@@ -732,7 +729,7 @@ class posix_process: private ::boost::noncopyable
 	}
 
 	/// Waits for the termination of this process.
-	private: void true_wait(bool block, bool check_status) const
+	private: void true_wait(bool block)
 	{
 		int wstatus;
 
@@ -751,10 +748,17 @@ class posix_process: private ::boost::noncopyable
 			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
 
-		if (!check_status)
+		if (!block)
 		{
-			return;
+			/// Check if the process is still alive
+			// Note: if errno == ESRCH => The pid does not exist (see kill(2))
+			if (::kill(pid_, 0) != -1 || errno != ESRCH)
+			{
+				return;
+			}
 		}
+
+		// We are sure that the process is done
 
 		pid_ = invalid_pid;
 
@@ -802,50 +806,54 @@ class posix_process: private ::boost::noncopyable
 		}
 	}
 
-	/// Tells if this process is still alive.
-	private: bool true_alive() const
-	{
-		// Make sure to remove a <defunct> process, in order to avoid
-		// false-positives (i.e., a call to kill(2) which return -1 with
-		// errno==ESRCH due to the presence of a <defunct> process).
-		this->true_wait(false, false);
-
-		// From kill(2) man page:
-		// "...If sig is 0, then no signal is sent, but error checking is still
-		//  performed; this can be used to check for the existence of a process
-		//  ID or process group ID..."
-
-		if (::kill(pid_, 0) == -1)
-		{
-			// Note: if errno == ESRCH => The pid does not exist (see kill(2))
-			if (errno != ESRCH)
-			{
-				::std::ostringstream oss;
-				oss << "Call to kill(2) failed for command '" << cmd_ << "' and signal 0: " << ::strerror(errno);
-
-				DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
-			}
-
-			// Set the status to a termination status. It will possibly changed
-			// by some higher-level function (e.g., signal)
-			status_ = terminated_process_status;
-			pid_ = invalid_pid;
-			//exit_status_ = ???; //FIXME
-
-			return false;
-		}
-
-		return true;
-	}
+//	/// Tells if this process is still alive.
+//	private: bool true_alive() const
+//	{
+//		// Make sure to remove a <defunct> process, in order to avoid
+//		// false-positives (i.e., a call to kill(2) which return -1 with
+//		// errno==ESRCH due to the presence of a <defunct> process).
+//		this->true_wait(false);
+//
+//		// From kill(2) man page:
+//		// "...If sig is 0, then no signal is sent, but error checking is still
+//		//  performed; this can be used to check for the existence of a process
+//		//  ID or process group ID..."
+//
+//		if (::kill(pid_, 0) == -1)
+//		{
+//			// Note: if errno == ESRCH => The pid does not exist (see kill(2))
+//			if (errno != ESRCH)
+//			{
+//				::std::ostringstream oss;
+//				oss << "Call to kill(2) failed for command '" << cmd_ << "' and signal 0: " << ::strerror(errno);
+//
+//				DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+//			}
+//
+////			// Set the status to a termination status. It will possibly changed
+////			// by some higher-level function (e.g., signal)
+////			status_ = terminated_process_status;
+////			pid_ = invalid_pid;
+////			//exit_status_ = ???; //FIXME
+//
+//			return false;
+//		}
+//		if (pid_ == invalid_pid)
+//		{
+//			return false;
+//		}
+//
+//		return true;
+//	}
 
 
 	private: ::std::string cmd_; ///< The command path
 //	private: ::std::vector< ::std::string > args_; ///< The list of command arguments
 	private: bool async_; ///< A \c true value means that the parent does not block to wait for child termination
-	private: mutable pid_type pid_; ///< The process identifier
-	private: mutable process_status_category status_; ///< The current status of this process
-	private: mutable int sig_; ///< The last signal sent to this process
-	private: mutable int exit_status_; ///< The exit status of this process
+	private: pid_type pid_; ///< The process identifier
+	private: process_status_category status_; ///< The current status of this process
+	private: int sig_; ///< The last signal sent to this process
+	private: int exit_status_; ///< The exit status of this process
 	private: ::boost::shared_ptr<fd_streambuf_type> p_in_wrbuf_;
 	private: ::boost::shared_ptr<fd_streambuf_type> p_out_rdbuf_;
 	private: ::boost::shared_ptr<fd_streambuf_type> p_err_rdbuf_;
