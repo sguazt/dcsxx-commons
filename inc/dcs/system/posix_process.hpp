@@ -86,7 +86,7 @@ class posix_process: private ::boost::noncopyable
 	public: typedef ::pid_t pid_type;
 
 
-	public: static const pid_type invalid_pid = -2;
+	public: static const pid_type invalid_pid = -1;
 	private: static const unsigned int zzz_secs = 5;
 
 
