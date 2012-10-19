@@ -510,58 +510,37 @@ class posix_process: private ::boost::noncopyable
 		if (pipe_in)
 		{
 			::close(pipefd[pipe_in_child_rd]);
-		}
-		if (pipe_out)
-		{
-			::close(pipefd[pipe_out_child_wr]);
-		}
-		if (pipe_err)
-		{
-			::close(pipefd[pipe_err_child_wr]);
-		}
-
 #ifdef __GNUC__
-		if (pipe_in)
-		{
 			p_in_wrbuf_ = ::boost::make_shared<fd_streambuf_type>(pipefd[pipe_in_parent_wr], ::std::ios::out);
-		}
-		if (pipe_out)
-		{
-			p_out_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(pipefd[pipe_out_parent_rd], ::std::ios::in);
-		}
-		if (pipe_err)
-		{
-			p_err_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(pipefd[pipe_err_parent_rd], ::std::ios::in);
-		}
 #else // __GNUC__
-		if (pipe_in)
-		{
 			fd_device_type in_wrdev(pipefd[pipe_in_parent_wr], ::boost::iostreams::close_handle);
 			p_in_wrbuf_ = ::boost::make_shared<fd_streambuf_type>(in_wrdev);
-		}
-		if (pipe_out)
-		{
-			fd_device_type out_rddev(pipefd[pipe_out_parent_rd], ::boost::iostreams::close_handle);
-			p_out_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(out_rddev);
-		}
-		if (pipe_err)
-		{
-			fd_device_type err_rddev(pipefd[pipe_err_parent_rd], ::boost::iostreams::close_handle);
-			p_err_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(err_rddev);
-		}
 #endif // __GNUC__
-		if (pipe_in)
-		{
 			p_ios_ = ::boost::make_shared< ::std::ostream >(p_in_wrbuf_.get());
 		}
 		if (pipe_out)
 		{
+			::close(pipefd[pipe_out_child_wr]);
+#ifdef __GNUC__
+			p_out_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(pipefd[pipe_out_parent_rd], ::std::ios::in);
+#else // __GNUC__
+			fd_device_type out_rddev(pipefd[pipe_out_parent_rd], ::boost::iostreams::close_handle);
+			p_out_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(out_rddev);
+#endif // __GNUC__
 			p_ois_ = ::boost::make_shared< ::std::istream >(p_out_rdbuf_.get());
 		}
 		if (pipe_err)
 		{
+			::close(pipefd[pipe_err_child_wr]);
+#ifdef __GNUC__
+			p_err_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(pipefd[pipe_err_parent_rd], ::std::ios::in);
+#else // __GNUC__
+			fd_device_type err_rddev(pipefd[pipe_err_parent_rd], ::boost::iostreams::close_handle);
+			p_err_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(err_rddev);
+#endif // __GNUC__
 			p_eis_ = ::boost::make_shared< ::std::istream >(p_err_rdbuf_.get());
 		}
+
 		// Write to the child process
 //		producer(os);
 		// Read the input from the child process
