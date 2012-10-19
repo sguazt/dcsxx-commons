@@ -740,25 +740,41 @@ class posix_process: private ::boost::noncopyable
 			opts |= WNOHANG;
 		}
 
-		if (::waitpid(pid_, &wstatus, opts) == -1)
+		// Loop until errno!=EINTR => WNOHANG was not set and an unblocked signal or a SIGCHLD was caught (see signal(7)).
+		do
 		{
-			::std::ostringstream oss;
-			oss << "Call to waitpid(2) failed for command '" << cmd_ << "': " << ::strerror(errno);
+			if (::waitpid(pid_, &wstatus, opts) == -1)
+			{
+				::std::ostringstream oss;
+				oss << "Call to waitpid(2) failed for command '" << cmd_ << "': " << ::strerror(errno);
 
-			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+				DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+			}
 		}
+		while (errno == EINTR);
 
 		if (!block)
 		{
-			/// Check if the process is still alive
-			// Note: if errno == ESRCH => The pid does not exist (see kill(2))
-			if (::kill(pid_, 0) != -1 || errno != ESRCH)
+			// Check if the process is still alive.
+			// If it is, return without changing the state of process; otherwise, change the state according to the way the process has terminated.
+			// NOTE: if kill(...)==-1 AND errno==ESRCH => The pid does not exist (see kill(2))
+			int ret = ::kill(pid_, 0);
+			if (ret != -1)
 			{
+				// The process is still alive
 				return;
+			}
+			if (errno != ESRCH)
+			{
+				// The call to kill failed for some reason
+				::std::ostringstream oss;
+				oss << "Call to kill(2) failed for command '" << cmd_ << "' and signal 0: " << ::strerror(errno);
+
+				DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 			}
 		}
 
-		// We are sure that the process is done
+		// At this point, we are sure that the process is done
 
 		pid_ = invalid_pid;
 
@@ -803,6 +819,63 @@ class posix_process: private ::boost::noncopyable
 			::std::ostringstream oss;
 			oss << "Command '" << cmd_ << "' failed for an unknown reason";
 			dcs::log_error(DCS_LOGGING_AT, oss.str());
+		}
+
+		//FIXME: should we take care of connected streams?
+		//       1st solution: connect open streams to /dev/null or /dev/zero
+		//       2nd solution: set the EOF state of each open stream
+		// 1st solution (commented)
+#if 0
+		// Invalidate connected streams
+		if (p_ios_)
+		{
+			// Redirect writes to /dev/null
+			int fd = open("/dev/null", O_WRONLY);
+#ifdef __GNUC__
+			p_in_wrbuf_ = ::boost::make_shared<fd_streambuf_type>(fd, ::std::ios::out);
+#else // __GNUC__
+			fd_device_type in_wrdev(fd, ::boost::iostreams::close_handle);
+			p_in_wrbuf_ = ::boost::make_shared<fd_streambuf_type>(in_wrdev);
+#endif // __GNUC__
+			p_ios_->rdbuf(p_in_wrbuf_.get());
+		}
+		if (p_ois_)
+		{
+			// Redirect reads from /dev/zero
+			int fd = open("/dev/zero", O_RDONLY);
+#ifdef __GNUC__
+			p_out_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(fd, ::std::ios::in);
+#else // __GNUC__
+			fd_device_type out_rddev(fd, ::boost::iostreams::close_handle);
+			p_out_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(out_rddev);
+#endif // __GNUC__
+			p_ois_->rdbuf(p_out_rdbuf_.get());
+		}
+		if (p_eis_)
+		{
+			// Redirect reads from /dev/zero
+			int fd = open("/dev/zero", O_RDONLY);
+#ifdef __GNUC__
+			p_err_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(fd, ::std::ios::in);
+#else // __GNUC__
+			fd_device_type err_rddev(fd, ::boost::iostreams::close_handle);
+			p_err_rdbuf_ = ::boost::make_shared<fd_streambuf_type>(err_rddev);
+#endif // __GNUC__
+			p_eis_->rdbuf(p_err_rdbuf_.get());
+		}
+#endif // if 0
+		// 2nd solution
+		if (p_ios_)
+		{
+			p_ios_->setstate(p_ios_->rdstate() | ::std::ios_base::eofbit);
+		}
+		if (p_ois_)
+		{
+			p_ois_->setstate(p_ois_->rdstate() | ::std::ios_base::eofbit);
+		}
+		if (p_eis_)
+		{
+			p_eis_->setstate(p_eis_->rdstate() | ::std::ios_base::eofbit);
 		}
 	}
 
