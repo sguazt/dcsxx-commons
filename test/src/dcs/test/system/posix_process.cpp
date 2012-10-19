@@ -1,7 +1,10 @@
+#include <cstdlib>
 #include <dcs/system/posix_process.hpp>
 #include <dcs/test.hpp>
 #include <iostream>
+#include <sstream>
 #include <string>
+#include <unistd.h>
 #include <vector>
 
 static const ::std::string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed rutrum quam non eros volutpat non feugiat lectus aliquam. Fusce in lacus at eros pharetra gravida nec vel metus. Vestibulum mattis odio ultrices libero fermentum et euismod justo vulputate. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vivamus vel purus augue, pellentesque consectetur nisi. Vivamus velit augue, lobortis at ornare et, pharetra id purus. Maecenas varius dui eu nisi facilisis quis tempus lectus auctor. Cras suscipit mi sit amet nisl vehicula vitae dapibus enim sodales. Mauris quis aliquet felis. Suspendisse ornare sem eget dolor tempus eu laoreet quam pharetra. In hac habitasse platea dictumst.\n\
@@ -35,6 +38,34 @@ DCS_TEST_DEF( test_alive )
 	proc.terminate();
 
 	DCS_TEST_CHECK_EQ( false, proc.alive() );
+}
+
+DCS_TEST_DEF( test_alive_2 )
+{
+	DCS_TEST_TRACE("Test Case: alive #2");
+
+	dcs::system::posix_process proc("cat");
+
+	proc.run();
+
+	DCS_DEBUG_TRACE("PID?: " << proc.pid());
+	DCS_DEBUG_TRACE("Alive #1?: " << proc.alive());
+
+	DCS_TEST_CHECK_EQ( true, proc.alive() );
+
+	DCS_DEBUG_TRACE("Alive #2?: " << proc.alive());
+	::std::ostringstream oss;
+	oss << "kill -s TERM " << proc.pid();
+	DCS_DEBUG_TRACE("Killing process: " << oss.str());
+	int ret;
+	ret = ::std::system(oss.str().c_str());
+
+	DCS_TEST_CHECK( -1 != ret );
+
+	::sleep(1); // Just let the OS deallocate process structures
+
+	DCS_TEST_CHECK_EQ( false, proc.alive() );
+	DCS_DEBUG_TRACE("Alive #3?: " << proc.alive());
 }
 
 DCS_TEST_DEF( test_input_producer )
@@ -98,6 +129,7 @@ int main()
 	DCS_TEST_BEGIN();
 		DCS_TEST_DO( test_run );
 		DCS_TEST_DO( test_alive );
+		DCS_TEST_DO( test_alive_2 );
 //		DCS_TEST_DO( test_input_producer ); FIXME: does not work
 		DCS_TEST_DO( test_output_consumer );
 		DCS_TEST_DO( test_error_consumer );

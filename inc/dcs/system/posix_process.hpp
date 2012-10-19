@@ -86,10 +86,13 @@ class posix_process: private ::boost::noncopyable
 	public: typedef ::pid_t pid_type;
 
 
+	public: static const pid_type invalid_pid = -1;
+
+
 	public: explicit posix_process()
 	: cmd_(),
 	  async_(true),
-	  pid_(-1),
+	  pid_(invalid_pid),
 	  status_(undefined_process_status),
 	  sig_(-1),
 	  exit_status_(EXIT_SUCCESS)
@@ -100,7 +103,7 @@ class posix_process: private ::boost::noncopyable
 	: cmd_(cmd),
 //	  args_(),
 	  async_(true),
-	  pid_(-1),
+	  pid_(invalid_pid),
 	  status_(undefined_process_status),
 	  sig_(-1),
 	  exit_status_(EXIT_SUCCESS)
@@ -319,7 +322,7 @@ class posix_process: private ::boost::noncopyable
  
 		pid_type pid = ::fork();
 
-		if (pid == -1)
+		if (pid == invalid_pid)
 		{
 			::std::ostringstream oss;
 			oss << "Call to fork(2) failed for command '" << cmd_ << "': " << ::strerror(errno);
@@ -582,7 +585,7 @@ class posix_process: private ::boost::noncopyable
 			return;
 		}
 
-		this->true_wait(true);
+		this->true_wait(true, true);
 
 		status_ = terminated_process_status;
 	}
@@ -618,14 +621,7 @@ class posix_process: private ::boost::noncopyable
 	/// Terminates the execution of this process
 	public: void terminate(bool force = false)
 	{
-//		// pre: process must be running
-//		DCS_ASSERT(status_ == running_process_status,
-//				   DCS_EXCEPTION_THROW(::std::runtime_error,
-//									   "Cannot stop a process that is not running"));
-
-		if (status_ != running_process_status
-			&& status_ != resumed_process_status
-			&& status_ != stopped_process_status)
+		if (!this->alive())
 		{
 			return;
 		}
@@ -635,19 +631,13 @@ class posix_process: private ::boost::noncopyable
 		{
 			this->signal(SIGKILL);
 		}
-//		this->true_wait(true);
 	}
 
 	/// Tells if this process is still running.
 	public: bool alive() const
 	{
-//		// pre: valid process
-//		DCS_ASSERT(pid_ != -1,
-//				   DCS_EXCEPTION_THROW(::std::runtime_error,
-//									   "Invalid PID"));
-
 		// Quick alive test: return FALSE is the process has already terminated
-		if (pid_ == -1
+		if (pid_ == invalid_pid
 			|| status_ == terminated_process_status
 			|| status_ == aborted_process_status
 			|| status_ == failed_process_status)
@@ -660,8 +650,6 @@ class posix_process: private ::boost::noncopyable
 			return true;
 		}
 
-		status_ = terminated_process_status;
-
 		return false;
 	}
 
@@ -673,9 +661,7 @@ class posix_process: private ::boost::noncopyable
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
 									   "Invalid signal number"));
 
-		if (status_ != running_process_status
-			&& status_ != resumed_process_status
-			&& status_ != stopped_process_status)
+		if (!this->alive())
 		{
 			return;
 		}
@@ -725,7 +711,7 @@ class posix_process: private ::boost::noncopyable
 			bool is_alive(true);
 			for (::std::size_t trial = 0; trial < num_trials && is_alive; ++trial)
 			{
-				is_alive = this->true_alive();
+				is_alive = this->alive();
 				if (is_alive)
 				{
 					::sleep(zzz_secs_);
@@ -746,7 +732,7 @@ class posix_process: private ::boost::noncopyable
 	}
 
 	/// Waits for the termination of this process.
-	private: void true_wait(bool block) const
+	private: void true_wait(bool block, bool check_status) const
 	{
 		int wstatus;
 
@@ -764,6 +750,13 @@ class posix_process: private ::boost::noncopyable
 
 			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 		}
+
+		if (!check_status)
+		{
+			return;
+		}
+
+		pid_ = invalid_pid;
 
 		if (WIFEXITED(wstatus))
 		{
@@ -815,7 +808,7 @@ class posix_process: private ::boost::noncopyable
 		// Make sure to remove a <defunct> process, in order to avoid
 		// false-positives (i.e., a call to kill(2) which return -1 with
 		// errno==ESRCH due to the presence of a <defunct> process).
-		this->true_wait(false);
+		this->true_wait(false, false);
 
 		// From kill(2) man page:
 		// "...If sig is 0, then no signal is sent, but error checking is still
@@ -836,6 +829,8 @@ class posix_process: private ::boost::noncopyable
 			// Set the status to a termination status. It will possibly changed
 			// by some higher-level function (e.g., signal)
 			status_ = terminated_process_status;
+			pid_ = invalid_pid;
+			//exit_status_ = ???; //FIXME
 
 			return false;
 		}
@@ -847,7 +842,7 @@ class posix_process: private ::boost::noncopyable
 	private: ::std::string cmd_; ///< The command path
 //	private: ::std::vector< ::std::string > args_; ///< The list of command arguments
 	private: bool async_; ///< A \c true value means that the parent does not block to wait for child termination
-	private: pid_type pid_; ///< The process identifier
+	private: mutable pid_type pid_; ///< The process identifier
 	private: mutable process_status_category status_; ///< The current status of this process
 	private: mutable int sig_; ///< The last signal sent to this process
 	private: mutable int exit_status_; ///< The exit status of this process
