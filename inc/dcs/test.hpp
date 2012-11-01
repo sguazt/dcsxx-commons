@@ -174,7 +174,11 @@ bool rel_close_to(::std::complex<T1> const& x, ::std::complex<T2> const& y, T3 t
 
 
 /// Define the name of the entire test suite.
-#define DCS_TEST_SUITE(m) ::std::cerr << "--- Test Suite: " << DCS_TEST_PARAM_EXPAND_(m) << " ---" << ::std::endl;
+#define DCS_TEST_SUITE(m) ::std::clog << "--- Test Suite: " << DCS_TEST_PARAM_EXPAND_(m) << " ---" << ::std::endl;
+
+
+/// Define the name of a single test case.
+#define DCS_TEST_CASE(m) ::std::clog << "--- Test Case: " << DCS_TEST_PARAM_EXPAND_(m) << " ---" << ::std::endl;
 
 
 /// Init procedure.
@@ -219,11 +223,11 @@ bool rel_close_to(::std::complex<T1> const& x, ::std::complex<T2> const& y, T3 t
 #define DCS_TEST_END()	/* [DCS_TEST_END] */ \
 							if (test_fails__ > 0) \
 							{ \
-								::std::cerr << "Number of failed tests: " << test_fails__ << ::std::endl; \
+								::std::clog << "Number of failed tests: " << test_fails__ << ::std::endl; \
 							} \
 							else \
 							{ \
-								::std::cerr << "No failed test" << ::std::endl; \
+								::std::clog << "No failed test" << ::std::endl; \
 							} \
 							/* End of Test Suite */ \
 						} \
@@ -233,7 +237,7 @@ bool rel_close_to(::std::complex<T1> const& x, ::std::complex<T2> const& y, T3 t
 /// Output the message \a m.
 /// Note: we don't use macro expansion inside parenthesis to let \a m be an
 ///  expression of the form <code>a &lt;&lt; b</code>.
-#define DCS_TEST_TRACE(m) ::std::cerr << "[Test>> " << DCS_TEST_PARAM_EXPAND_(m) << ::std::endl
+#define DCS_TEST_TRACE(m) ::std::clog << "[Test>> " << DCS_TEST_PARAM_EXPAND_(m) << ::std::endl
 
 
 /// Check for the truth of the given assertion \a x.
@@ -385,6 +389,6 @@ bool rel_close_to(::std::complex<T1> const& x, ::std::complex<T2> const& y, T3 t
 
 
 /// Output the error message \a x.
-#define DCS_TEST_ERROR(x) ::std::cerr << "[Error (" << __FILE__ << ":" << __func__ << ":" << __LINE__ << ")>> " << DCS_TEST_PARAM_EXPAND_(x) << ::std::endl
+#define DCS_TEST_ERROR(x) ::std::clog << "[Error (" << __FILE__ << ":" << __func__ << ":" << __LINE__ << ")>> " << DCS_TEST_PARAM_EXPAND_(x) << ::std::endl
 
 #endif // DCS_TEST_HPP
