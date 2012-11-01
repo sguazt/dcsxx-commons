@@ -39,7 +39,7 @@ namespace dcs { namespace math {
 /// Bind \a x to be not less than \a lb.
 template <typename T>
 inline
-T bind_lower(T& x, T lb)
+T bind_lower(T x, T lb)
 {
 	if (x < lb)
 	{
@@ -52,7 +52,7 @@ T bind_lower(T& x, T lb)
 /// Bind \a x to be not greater than \a ub.
 template <typename T>
 inline
-T bind_upper(T& x, T ub)
+T bind_upper(T x, T ub)
 {
 	if (x > ub)
 	{
@@ -65,10 +65,9 @@ T bind_upper(T& x, T ub)
 /// Bind \a x to be not less than \a lb and greater than \a ub.
 template <typename T>
 inline
-T bind(T& x, T lb, T ub)
+T bind(T x, T lb, T ub)
 {
-	bind_lower(x, lb);
-	bind_upper(x, ub);
+	return bind_lower(bind_upper(x, ub), lb);
 
 	return x;
 }
