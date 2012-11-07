@@ -1,7 +1,7 @@
 /**
- * \file dcs/math/function/bind.hpp
+ * \file dcs/math/function/clamp.hpp
  *
- * \brief Functions to bind a value either upper or lower.
+ * \brief Functions to clamp a value either up or down.
  *
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  *
@@ -30,8 +30,8 @@
  * along with dcsxx-commons. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_MATH_FUNCTION_BIND_HPP
-#define DCS_MATH_FUNCTION_BIND_HPP
+#ifndef DCS_MATH_FUNCTION_CLAMP_HPP
+#define DCS_MATH_FUNCTION_CLAMP_HPP
 
 
 namespace dcs { namespace math {
@@ -39,7 +39,7 @@ namespace dcs { namespace math {
 /// Bind \a x to be not less than \a lb.
 template <typename T>
 inline
-T bind_lower(T x, T lb)
+T clamp_down(T x, T lb)
 {
 	if (x < lb)
 	{
@@ -52,7 +52,7 @@ T bind_lower(T x, T lb)
 /// Bind \a x to be not greater than \a ub.
 template <typename T>
 inline
-T bind_upper(T x, T ub)
+T clamp_up(T x, T ub)
 {
 	if (x > ub)
 	{
@@ -65,9 +65,9 @@ T bind_upper(T x, T ub)
 /// Bind \a x to be not less than \a lb and greater than \a ub.
 template <typename T>
 inline
-T bind(T x, T lb, T ub)
+T clamp(T x, T lb, T ub)
 {
-	return bind_lower(bind_upper(x, ub), lb);
+	return clamp_down(clamp_up(x, ub), lb);
 
 	return x;
 }
@@ -75,7 +75,7 @@ T bind(T x, T lb, T ub)
 /// Tells if \a lb is a lower bound of \a x.
 template <typename T>
 inline
-bool bound_lower(T x, T lb)
+bool clamped_down(T x, T lb)
 {
 	return x >= lb;
 }
@@ -83,7 +83,7 @@ bool bound_lower(T x, T lb)
 /// Tells if \a ub is an upper bound of \a x.
 template <typename T>
 inline
-bool bound_upper(T x, T ub)
+bool clamped_up(T x, T ub)
 {
 	return x <= ub;
 }
@@ -94,12 +94,12 @@ bool bound_upper(T x, T ub)
  */
 template <typename T>
 inline
-bool bound(T x, T lb, T ub)
+bool clamped(T x, T lb, T ub)
 {
-	return bound_lower(x, lb) && bound_upper(x, ub);
+	return clamped_down(x, lb) && clamped_up(x, ub);
 }
 
 }} // Namespace dcs::math
 
 
-#endif // DCS_MATH_FUNCTION_BIND_HPP
+#endif // DCS_MATH_FUNCTION_CLAMP_HPP

@@ -31,123 +31,123 @@
  * along with dcsxx-commons. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <dcs/math/function/bind.hpp>
+#include <dcs/math/function/clamp.hpp>
 #include <dcs/test.hpp>
 
 
 namespace detail { namespace /*<unnamed>*/ {
 
 template <typename T>
-struct bind_test_case_data
+struct clamp_test_case_data
 {
 	T val_inrange;
 	T val_lb;
 	T val_ub;
 	T val_outrange_lo;
 	T val_outrange_hi;
-}; // bind_test_cast_data
+}; // clamp_test_cast_data
 
 }} // Namespace detail::<unnamed>
 
 
-DCS_TEST_DEF( bind )
+DCS_TEST_DEF( clamp )
 {
-	DCS_TEST_CASE( "bind" );
+	DCS_TEST_CASE( "clamp" );
 
-	detail::bind_test_case_data<float> fdata = {0.5,0,1,-1.e-5,1+1.e+5};
-	detail::bind_test_case_data<double> ddata = {0.5,0,1,-1.e-5,1+1.e+5};
+	detail::clamp_test_case_data<float> fdata = {0.5,0,1,-1.e-5,1+1.e+5};
+	detail::clamp_test_case_data<double> ddata = {0.5,0,1,-1.e-5,1+1.e+5};
 
-	// Check bounds (without binding)
-
-	// -- Float values
-
-	DCS_TEST_CHECK( dcs::math::bound_lower(fdata.val_inrange, float(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(fdata.val_inrange, float(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(fdata.val_inrange, float(0), float(1)) );
-
-	DCS_TEST_CHECK( dcs::math::bound_lower(fdata.val_lb, float(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(fdata.val_lb, float(0)) );
-	DCS_TEST_CHECK( dcs::math::bound(fdata.val_lb, float(0), float(1)) );
-
-	DCS_TEST_CHECK( dcs::math::bound_lower(fdata.val_ub, float(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(fdata.val_ub, float(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(fdata.val_ub, float(0), float(1)) );
-
-	DCS_TEST_CHECK( !dcs::math::bound_lower(fdata.val_outrange_lo, float(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(fdata.val_outrange_lo, float(1)) );
-	DCS_TEST_CHECK( !dcs::math::bound(fdata.val_outrange_lo, float(0), float(1)) );
-
-	DCS_TEST_CHECK( dcs::math::bound_lower(fdata.val_outrange_hi, float(0)) );
-	DCS_TEST_CHECK( !dcs::math::bound_upper(fdata.val_outrange_hi, float(1)) );
-	DCS_TEST_CHECK( !dcs::math::bound(fdata.val_outrange_hi, float(0), float(1)) );
-
-	// -- Double values
-
-	DCS_TEST_CHECK( dcs::math::bound_lower(ddata.val_inrange, double(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(ddata.val_inrange, double(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(ddata.val_inrange, double(0), double(1)) );
-
-	DCS_TEST_CHECK( dcs::math::bound_lower(ddata.val_lb, double(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(ddata.val_lb, double(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(ddata.val_lb, double(0), double(1)) );
-
-	DCS_TEST_CHECK( dcs::math::bound_lower(ddata.val_ub, double(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(ddata.val_ub, double(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(ddata.val_ub, double(0), double(1)) );
-
-	DCS_TEST_CHECK( !dcs::math::bound_lower(ddata.val_outrange_lo, double(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(ddata.val_outrange_lo, double(1)) );
-	DCS_TEST_CHECK( !dcs::math::bound(ddata.val_outrange_lo, double(0), double(1)) );
-
-	DCS_TEST_CHECK( dcs::math::bound_lower(ddata.val_outrange_hi, double(0)) );
-	DCS_TEST_CHECK( !dcs::math::bound_upper(ddata.val_outrange_hi, double(1)) );
-	DCS_TEST_CHECK( !dcs::math::bound(ddata.val_outrange_hi, double(0), double(1)) );
-
-	// Check bounds (with binding)
+	// Check bounds (without clamping)
 
 	// -- Float values
 
-	DCS_TEST_CHECK( dcs::math::bound_lower(dcs::math::bind(fdata.val_inrange, float(0), float(1)), float(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(dcs::math::bind(fdata.val_inrange, float(0), float(1)), float(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(dcs::math::bind(fdata.val_inrange, float(0), float(1)), float(0), float(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped_down(fdata.val_inrange, float(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(fdata.val_inrange, float(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(fdata.val_inrange, float(0), float(1)) );
 
-	DCS_TEST_CHECK( dcs::math::bound_lower(dcs::math::bind(fdata.val_lb, float(0), float(1)), float(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(dcs::math::bind(fdata.val_lb, float(0), float(1)), float(0)) );
-	DCS_TEST_CHECK( dcs::math::bound(dcs::math::bind(fdata.val_lb, float(0), float(1)), float(0), float(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped_down(fdata.val_lb, float(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(fdata.val_lb, float(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped(fdata.val_lb, float(0), float(1)) );
 
-	DCS_TEST_CHECK( dcs::math::bound_lower(dcs::math::bind(fdata.val_ub, float(0), float(1)), float(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(dcs::math::bind(fdata.val_ub, float(0), float(1)), float(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(dcs::math::bind(fdata.val_ub, float(0), float(1)), float(0), float(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped_down(fdata.val_ub, float(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(fdata.val_ub, float(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(fdata.val_ub, float(0), float(1)) );
 
-	DCS_TEST_CHECK( dcs::math::bound_lower(dcs::math::bind(fdata.val_outrange_lo, float(0), float(1)), float(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(dcs::math::bind(fdata.val_outrange_lo, float(0), float(1)), float(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(dcs::math::bind(fdata.val_outrange_lo, float(0), float(1)), float(0), float(1)) );
+	DCS_TEST_CHECK( !dcs::math::clamped_down(fdata.val_outrange_lo, float(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(fdata.val_outrange_lo, float(1)) );
+	DCS_TEST_CHECK( !dcs::math::clamped(fdata.val_outrange_lo, float(0), float(1)) );
 
-	DCS_TEST_CHECK( dcs::math::bound_lower(dcs::math::bind(fdata.val_outrange_hi, float(0), float(1)), float(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(dcs::math::bind(fdata.val_outrange_hi, float(0), float(1)), float(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(dcs::math::bind(fdata.val_outrange_hi, float(0), float(1)), float(0), float(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped_down(fdata.val_outrange_hi, float(0)) );
+	DCS_TEST_CHECK( !dcs::math::clamped_up(fdata.val_outrange_hi, float(1)) );
+	DCS_TEST_CHECK( !dcs::math::clamped(fdata.val_outrange_hi, float(0), float(1)) );
 
 	// -- Double values
 
-	DCS_TEST_CHECK( dcs::math::bound_lower(dcs::math::bind(ddata.val_inrange, double(0), double(1)), double(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(dcs::math::bind(ddata.val_inrange, double(0), double(1)), double(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(dcs::math::bind(ddata.val_inrange, double(0), double(1)), double(0), double(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped_down(ddata.val_inrange, double(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(ddata.val_inrange, double(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(ddata.val_inrange, double(0), double(1)) );
 
-	DCS_TEST_CHECK( dcs::math::bound_lower(dcs::math::bind(ddata.val_lb, double(0), double(1)), double(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(dcs::math::bind(ddata.val_lb, double(0), double(1)), double(0)) );
-	DCS_TEST_CHECK( dcs::math::bound(dcs::math::bind(ddata.val_lb, double(0), double(1)), double(0), double(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped_down(ddata.val_lb, double(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(ddata.val_lb, double(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(ddata.val_lb, double(0), double(1)) );
 
-	DCS_TEST_CHECK( dcs::math::bound_lower(dcs::math::bind(ddata.val_ub, double(0), double(1)), double(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(dcs::math::bind(ddata.val_ub, double(0), double(1)), double(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(dcs::math::bind(ddata.val_ub, double(0), double(1)), double(0), double(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped_down(ddata.val_ub, double(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(ddata.val_ub, double(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(ddata.val_ub, double(0), double(1)) );
 
-	DCS_TEST_CHECK( dcs::math::bound_lower(dcs::math::bind(ddata.val_outrange_lo, double(0), double(1)), double(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(dcs::math::bind(ddata.val_outrange_lo, double(0), double(1)), double(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(dcs::math::bind(ddata.val_outrange_lo, double(0), double(1)), double(0), double(1)) );
+	DCS_TEST_CHECK( !dcs::math::clamped_down(ddata.val_outrange_lo, double(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(ddata.val_outrange_lo, double(1)) );
+	DCS_TEST_CHECK( !dcs::math::clamped(ddata.val_outrange_lo, double(0), double(1)) );
 
-	DCS_TEST_CHECK( dcs::math::bound_lower(dcs::math::bind(ddata.val_outrange_hi, double(0), double(1)), double(0)) );
-	DCS_TEST_CHECK( dcs::math::bound_upper(dcs::math::bind(ddata.val_outrange_hi, double(0), double(1)), double(1)) );
-	DCS_TEST_CHECK( dcs::math::bound(dcs::math::bind(ddata.val_outrange_hi, double(0), double(1)), double(0), double(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped_down(ddata.val_outrange_hi, double(0)) );
+	DCS_TEST_CHECK( !dcs::math::clamped_up(ddata.val_outrange_hi, double(1)) );
+	DCS_TEST_CHECK( !dcs::math::clamped(ddata.val_outrange_hi, double(0), double(1)) );
+
+	// Check bounds (with clamping)
+
+	// -- Float values
+
+	DCS_TEST_CHECK( dcs::math::clamped_down(dcs::math::clamp(fdata.val_inrange, float(0), float(1)), float(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(dcs::math::clamp(fdata.val_inrange, float(0), float(1)), float(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(dcs::math::clamp(fdata.val_inrange, float(0), float(1)), float(0), float(1)) );
+
+	DCS_TEST_CHECK( dcs::math::clamped_down(dcs::math::clamp(fdata.val_lb, float(0), float(1)), float(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(dcs::math::clamp(fdata.val_lb, float(0), float(1)), float(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped(dcs::math::clamp(fdata.val_lb, float(0), float(1)), float(0), float(1)) );
+
+	DCS_TEST_CHECK( dcs::math::clamped_down(dcs::math::clamp(fdata.val_ub, float(0), float(1)), float(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(dcs::math::clamp(fdata.val_ub, float(0), float(1)), float(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(dcs::math::clamp(fdata.val_ub, float(0), float(1)), float(0), float(1)) );
+
+	DCS_TEST_CHECK( dcs::math::clamped_down(dcs::math::clamp(fdata.val_outrange_lo, float(0), float(1)), float(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(dcs::math::clamp(fdata.val_outrange_lo, float(0), float(1)), float(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(dcs::math::clamp(fdata.val_outrange_lo, float(0), float(1)), float(0), float(1)) );
+
+	DCS_TEST_CHECK( dcs::math::clamped_down(dcs::math::clamp(fdata.val_outrange_hi, float(0), float(1)), float(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(dcs::math::clamp(fdata.val_outrange_hi, float(0), float(1)), float(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(dcs::math::clamp(fdata.val_outrange_hi, float(0), float(1)), float(0), float(1)) );
+
+	// -- Double values
+
+	DCS_TEST_CHECK( dcs::math::clamped_down(dcs::math::clamp(ddata.val_inrange, double(0), double(1)), double(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(dcs::math::clamp(ddata.val_inrange, double(0), double(1)), double(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(dcs::math::clamp(ddata.val_inrange, double(0), double(1)), double(0), double(1)) );
+
+	DCS_TEST_CHECK( dcs::math::clamped_down(dcs::math::clamp(ddata.val_lb, double(0), double(1)), double(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(dcs::math::clamp(ddata.val_lb, double(0), double(1)), double(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped(dcs::math::clamp(ddata.val_lb, double(0), double(1)), double(0), double(1)) );
+
+	DCS_TEST_CHECK( dcs::math::clamped_down(dcs::math::clamp(ddata.val_ub, double(0), double(1)), double(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(dcs::math::clamp(ddata.val_ub, double(0), double(1)), double(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(dcs::math::clamp(ddata.val_ub, double(0), double(1)), double(0), double(1)) );
+
+	DCS_TEST_CHECK( dcs::math::clamped_down(dcs::math::clamp(ddata.val_outrange_lo, double(0), double(1)), double(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(dcs::math::clamp(ddata.val_outrange_lo, double(0), double(1)), double(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(dcs::math::clamp(ddata.val_outrange_lo, double(0), double(1)), double(0), double(1)) );
+
+	DCS_TEST_CHECK( dcs::math::clamped_down(dcs::math::clamp(ddata.val_outrange_hi, double(0), double(1)), double(0)) );
+	DCS_TEST_CHECK( dcs::math::clamped_up(dcs::math::clamp(ddata.val_outrange_hi, double(0), double(1)), double(1)) );
+	DCS_TEST_CHECK( dcs::math::clamped(dcs::math::clamp(ddata.val_outrange_hi, double(0), double(1)), double(0), double(1)) );
 }
 
 int main()
@@ -155,6 +155,6 @@ int main()
 	DCS_TEST_SUITE( "Math Functions" );
 
 	DCS_TEST_BEGIN();
-		DCS_TEST_DO( bind );
+		DCS_TEST_DO( clamp );
 	DCS_TEST_END();
 }
