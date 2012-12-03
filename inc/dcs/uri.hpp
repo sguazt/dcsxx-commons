@@ -261,22 +261,6 @@ class uri
 		}
 	}
 
-	/**
-	 * Sets the scheme part of the URI. The given scheme
-	 * is converted to lower-case.
-	 *
-	 * A list of registered URI schemes can be found
-	 * at <http://www.iana.org/assignments/uri-schemes>.
-	 */
-	public: void scheme(::std::string const& s)
-	{
-		scheme_ = ::dcs::string::to_lower_copy(s);
-		if (invalid_port == port_)
-		{
-			port_ = well_known_port(scheme_);
-		}
-	}
-
 	/// Returns the user-info part of the URI.
 	public: ::std::string user_info() const
 	{
@@ -584,7 +568,7 @@ class uri
 	public: ::std::string str() const
 	{
 		::std::ostringstream oss;
-		if (u.relative())
+		if (relative())
 		{
 			oss << encode(path_, reserved_path);
 		}
@@ -592,13 +576,14 @@ class uri
 		{
 			oss << scheme_;
 			oss << ':';
-			if (!authority_.empty() || scheme_ == "file")
+			::std::string auth(authority());
+			if (!auth.empty() || scheme_ == "file")
 			{
-				oss << "//" << authority_;
+				oss << "//" << auth;
 			}
 			if (!path_.empty())
 			{
-				if (!authority_.empty() && path_[0] != '/')
+				if (!auth.empty() && path_[0] != '/')
 				{
 					oss << '/';
 				}
