@@ -70,11 +70,6 @@ namespace dcs {
  */
 class uri
 {
-	template <typename C, typename CT>
-	friend
-	::std::basic_ostream<C,CT>& operator<<(::std::basic_ostream<C,CT>& os, uri const& u);
-
-
 	public: static const unsigned short invalid_port;
 	private: static const ::std::string reserved_path;
 	private: static const ::std::string reserved_query;
@@ -248,6 +243,22 @@ class uri
 	public: ::std::string scheme() const
 	{
 		return scheme_;
+	}
+
+	/**
+	 * Sets the scheme part of the URI. The given scheme
+	 * is converted to lower-case.
+	 *
+	 * A list of registered URI schemes can be found
+	 * at <http://www.iana.org/assignments/uri-schemes>.
+	 */
+	public: void scheme(::std::string const& s)
+	{
+		scheme_ = ::dcs::string::to_lower_copy(s);
+		if (invalid_port == port_)
+		{
+			port_ = well_known_port(scheme_);
+		}
 	}
 
 	/**
@@ -567,6 +578,48 @@ class uri
 	public: void path_segments(::std::vector< ::std::string >& segs)
 	{
 		path_segments(path_, segs);
+	}
+
+	/// Return a string representation of this URI.
+	public: ::std::string str() const
+	{
+		::std::ostringstream oss;
+		if (u.relative())
+		{
+			oss << encode(path_, reserved_path);
+		}
+		else
+		{
+			oss << scheme_;
+			oss << ':';
+			if (!authority_.empty() || scheme_ == "file")
+			{
+				oss << "//" << authority_;
+			}
+			if (!path_.empty())
+			{
+				if (!authority_.empty() && path_[0] != '/')
+				{
+					oss << '/';
+				}
+				oss << encode(path_, reserved_path);
+			}
+			else if (!query_.empty() || !fragment_.empty())
+			{
+				oss << '/';
+			}
+		}
+		if (!query_.empty())
+		{
+			oss << '?';
+			oss << query_;
+		}
+		if (!fragment_.empty())
+		{
+			oss << '#' << encode(fragment_, reserved_fragment);
+		}
+
+		return oss.str();
 	}
 
 	/// Returns true if both uri's are equivalent.
@@ -1180,44 +1233,7 @@ void swap(uri& u1, uri& u2)
 template <typename CharT, typename CharTraitsT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, uri const& u)
 {
-	::std::ostringstream oss;
-	if (u.relative())
-	{
-		oss << dcs::uri::encode(u.path(), uri::reserved_path);
-	}
-	else
-	{
-		oss << u.scheme();
-		oss << ':';
-		std::string auth = u.authority();
-		if (!auth.empty() || u.scheme() == "file")
-		{
-			oss << "//" << auth;
-		}
-		if (!u.path().empty())
-		{
-			if (!auth.empty() && u.path()[0] != '/')
-			{
-				oss << '/';
-			}
-			oss << dcs::uri::encode(u.path(), uri::reserved_path);
-		}
-		else if (!u.query().empty() || !u.fragment().empty())
-		{
-			oss << '/';
-		}
-	}
-	if (!u.query().empty())
-	{
-		oss << '?';
-		oss << u.query();
-	}
-	if (!u.fragment().empty())
-	{
-		oss << '#' << dcs::uri::encode(u.fragment(), uri::reserved_fragment);
-	}
-
-	os << oss.str();
+	os << u.str();
 
 	return os;
 }
