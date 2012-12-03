@@ -15,7 +15,7 @@
  *                           University of Piemonte Orientale,
  *                           Alessandria (Italy)]
  *
- * This file is part of dcsxx-commons.
+ * This file is part of dcsxx-commons (below referred to as "this program").
  *
  * dcsxx-commons is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
@@ -40,27 +40,30 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 
 namespace dcs { namespace cli { namespace simple {
 
+/// Find the option \a opt inside the given range of iterators.
 template <typename FwdIterT>
-FwdIterT find_option(FwdIterT first, FwdIterT last, ::std::string const& option)
+FwdIterT find_option(FwdIterT first, FwdIterT last, ::std::string const& opt)
 {
-	FwdIterT it = ::std::find(first, last, option);
+	FwdIterT it = ::std::find(first, last, opt);
 
 	return (it != last) ? it : last;
 }
 
+/// Get the value of the option \a opt inside the given range of iterators.
 template <typename T, typename FwdIterT>
-T get_option(FwdIterT first, FwdIterT last, ::std::string const& option)
+T get_option(FwdIterT first, FwdIterT last, ::std::string const& opt)
 {
-	FwdIterT it = find_option(first, last, option);
+	FwdIterT it = find_option(first, last, opt);
 
 	if (it == last || ++it == last)
 	{
 		::std::ostringstream oss;
-		oss << "Unable to find option: '" << option << "'";
+		oss << "Unable to find option: '" << opt << "'";
 
 		DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 	}
@@ -73,6 +76,13 @@ T get_option(FwdIterT first, FwdIterT last, ::std::string const& option)
 	return value;
 }
 
+/**
+ * \brief Get the value of the option \a opt inside the given range of
+ *  iterators.
+ *
+ * \return The value of the found option, or the given default value if it is
+ *  not found.
+ */
 template <typename T, typename FwdIterT>
 T get_option(FwdIterT first, FwdIterT last, ::std::string const& opt, T default_value)
 {
@@ -96,6 +106,61 @@ bool get_option(FwdIterT first, FwdIterT last, ::std::string const& opt)
 	FwdIterT it = find_option(first, last, opt);
 
 	return it != last;
+}
+
+template <typename T, typename FwdIterT>
+::std::vector<T> get_options(FwdIterT first, FwdIterT last, ::std::string const& opt)
+{
+	::std::vector<T> values;
+
+	FwdIterT it = first;
+
+	while (it != last)
+	{
+		it = find_option(it, last, opt);
+
+		if (it == last || ++it == last)
+		{
+			::std::ostringstream oss;
+			oss << "Unable to find option: '" << opt << "'";
+
+			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+		}
+
+		T value;
+
+		::std::istringstream iss(*it);
+		iss >> value;
+
+		values.push_back(value);
+	}
+
+	return values;
+}
+
+template <typename T, typename FwdIterT>
+::std::vector<T> get_options(FwdIterT first, FwdIterT last, ::std::string const& opt, T default_value)
+{
+	::std::vector<T> values;
+
+	FwdIterT it = first;
+
+	while (it != last)
+	{
+		it = find_option(it, last, opt);
+
+		T value(default_value);
+
+		if (it != last && ++it != last)
+		{
+			::std::istringstream iss(*it);
+			iss >> value;
+		}
+
+		values.push_back(value);
+	}
+
+	return values;
 }
 
 }}} // Namespace dcs::cli::simple
