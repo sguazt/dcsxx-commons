@@ -153,9 +153,6 @@ cat > $base_inc_dir/$prj_subdir/detail/config.hpp <<EOT
 #include <$prj_subdir/detail/config/boost.hpp>
 
 
-#define DCS_DETAIL_CONFIG_HAVE_BOOST $have_boost_bool
-
-
 #endif // DCS_DETAIL_CONFIG_HPP
 EOT
 
@@ -205,7 +202,7 @@ cat > $base_inc_dir/$prj_subdir/detail/config/boost.hpp <<EOT
 /// Inform if we have Boost
 #if $have_boost_bool
 # ifndef DCS_DETAIL_CONFIG_HAVE_BOOST
-#  define DCS_DETAIL_CONFIG_HAVE_BOOST
+#  define DCS_DETAIL_CONFIG_HAVE_BOOST $have_boost_bool
 # endif // DCS_DETAIL_CONFIG_HAVE_BOOST
 #else
 # undef DCS_DETAIL_CONFIG_HAVE_BOOST
