@@ -129,7 +129,7 @@ template <typename T, typename FwdIterT>
 		if (++it == last)
 		{
 			// This is not OK since it is a malformed option
-			ko = true
+			ko = true;
 			break;
 		}
 
