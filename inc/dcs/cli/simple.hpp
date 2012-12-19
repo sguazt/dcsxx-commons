@@ -112,6 +112,7 @@ template <typename T, typename FwdIterT>
 ::std::vector<T> get_options(FwdIterT first, FwdIterT last, ::std::string const& opt)
 {
 	::std::vector<T> values;
+	bool ko(true);
 
 	FwdIterT it = first;
 
@@ -119,12 +120,17 @@ template <typename T, typename FwdIterT>
 	{
 		it = find_option(it, last, opt);
 
-		if (it == last || ++it == last)
+		if (it == last)
 		{
-			::std::ostringstream oss;
-			oss << "Unable to find option: '" << opt << "'";
-
-			DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
+			// This is OK if we have already found an occurrence of this option.
+			// Otherwise, it is not OK
+			break;
+		}
+		if (++it == last)
+		{
+			// This is not OK since it is a malformed option
+			ko = true
+			break;
 		}
 
 		T value;
@@ -133,6 +139,16 @@ template <typename T, typename FwdIterT>
 		iss >> value;
 
 		values.push_back(value);
+
+		ko = false;
+	}
+
+	if (ko)
+	{
+		::std::ostringstream oss;
+		oss << "Unable to find option: '" << opt << "'";
+
+		DCS_EXCEPTION_THROW(::std::runtime_error, oss.str());
 	}
 
 	return values;
