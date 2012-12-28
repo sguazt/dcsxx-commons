@@ -102,7 +102,10 @@ bool close_to(T1 x, T2 y, T3 tol)
 		// According to IEEE, NaN are different event by itself
 		return false;
 	}
-	return ::std::abs(x-y) <= (::std::max(static_cast<real_type>(::std::abs(x)), static_cast<real_type>(::std::abs(y)))*tol);
+	//return ::std::abs(x-y) <= (::std::max(static_cast<real_type>(::std::abs(x)), static_cast<real_type>(::std::abs(y)))*tol);
+	real_type xx(::std::abs(x));
+	real_type yy(::std::abs(y));
+	return (::std::max(xx, yy)-::std::min(xx, yy)) <= tol;
 }
 
 /// Check if two complex numbers are close each other (wrt a given tolerance).
@@ -117,9 +120,12 @@ bool close_to(::std::complex<T1> const& x, ::std::complex<T2> const& y, T3 tol)
 		// According to IEEE, NaN is different even by itself
 		return false;
 	}
-	::std::complex<real_type> xx(x);
-	::std::complex<real_type> yy(y);
-	return ::std::abs(xx-yy) <= (::std::max(::std::abs(xx), ::std::abs(yy))*tol);
+	//::std::complex<real_type> xx(x);
+	//::std::complex<real_type> yy(y);
+	//return ::std::abs(xx-yy) <= (::std::max(::std::abs(xx), ::std::abs(yy))*tol);
+	real_type xx(::std::abs(x));
+	real_type yy(::std::abs(y));
+	return (::std::max(xx, yy)-::std::min(xx, yy)) <= tol;
 }
 
 /// Check if two (real) numbers are close each other (wrt a given tolerance).
