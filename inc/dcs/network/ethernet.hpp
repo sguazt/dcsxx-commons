@@ -37,8 +37,9 @@
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/exception.hpp>
-#include <dcs/network/base_packet.hpp>
+#include <dcs/network/pdu.hpp>
 #include <dcs/network/byte_order.hpp>
+#include <iomanip>
 #include <iostream>
 #include <netinet/ether.h> //FIXME: only available on systems conforming to 4.3BSD and SunOS
 #include <stdexcept>
@@ -46,7 +47,7 @@
 
 namespace dcs { namespace network {
 
-class ethernet_packet: public base_packet
+class ethernet_frame: public base_pdu
 {
 	public: static const ::boost::uint8_t address_size = 6; ///< Octects in one MAC address
 	public: static const ::boost::uint8_t header_size = 14; ///< Total octects in header
@@ -168,7 +169,7 @@ class ethernet_packet: public base_packet
 		uint16_t tci_; ///< Tag Control Identifier
 	};
 
-	public: ethernet_packet(::boost::uint8_t const* pkt, ::boost::uint32_t sz)
+	public: ethernet_frame(::boost::uint8_t const* pkt, ::boost::uint32_t sz)
 	: p_hdr_(0),
 	  p_hdr_8021q_(0),
 	  p_data_(0),
@@ -259,76 +260,82 @@ class ethernet_packet: public base_packet
 	private: ethernet_8021q_header const* p_hdr_8021q_;
 	private: ::boost::uint8_t const* p_data_;
 	private: ::boost::uint32_t data_sz_;
-}; // ethernet_packet
+}; // ethernet_frame
 
 
 template <typename CharT, typename CharTraitsT>
-::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, ethernet_packet const& pkt)
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, ethernet_frame const& pkt)
 {
+	::std::ios_base::fmtflags io_flags = os.flags();
+
 	os	<< "<Ethernet::"
+		<< ::std::showbase
 		<< "src: " << pkt.source_address()
 		<< ", dst: " << pkt.destination_address()
-		<< ", ethertype: ";
+		<< ", ethertype: " << ::std::hex << pkt.ethertype_field()
+		<< ">";
 
-	if (pkt.ethertype_field() <= ethernet_packet::mtu)
-	{
-		os << "IEEE 802.3";
-	}
-	else
-	{
-		switch (pkt.ethertype_field())
-		{
-			case ethernet_packet::ethertype_pup:
-				os << "PUP";
-				break;
-			case ethernet_packet::ethertype_sprite:
-				os << "Sprite";
-				break;
-			case ethernet_packet::ethertype_ipv4:
-				os << "IPv4";
-				break;
-			case ethernet_packet::ethertype_arp:
-				os << "ARP";
-				break;
-			case ethernet_packet::ethertype_rarp:
-				os << "Reverse ARP";
-				break;
-			case ethernet_packet::ethertype_atalk:
-				os << "Appletalk";
-				break;
-			case ethernet_packet::ethertype_aarp:
-				os << "Appletalk ARP";
-				break;
-			case ethernet_packet::ethertype_ieee8021q:
-				os << "IEEE 802.1q";
-				break;
-			case ethernet_packet::ethertype_ipx:
-				os << "IPX";
-				break;
-			case ethernet_packet::ethertype_ipv6:
-				os << "IPv6";
-				break;
-			case ethernet_packet::ethertype_loopback:
-				os << "Loopback";
-				break;
-			case ethernet_packet::ethertype_ieee8021qinq1:
-				os << "IEEE 802.1QinQ (9100)";
-				break;
-			case ethernet_packet::ethertype_ieee8021qinq2:
-				os << "IEEE 802.1QinQ (9200)";
-				break;
-			case ethernet_packet::ethertype_ieee8021qinq3:
-				os << "IEEE 802.1QinQ (9300)";
-				break;
-			case ethernet_packet::ethertype_ieee8021ad:
-				os << "IEEE 802.1ad";
-				break;
-			detault:
-				os << "Unknown";
-		}
-	}
+//	if (pkt.ethertype_field() <= ethernet_frame::mtu)
+//	{
+//		os << "IEEE 802.3";
+//	}
+//	else
+//	{
+//		switch (pkt.ethertype_field())
+//		{
+//			case ethernet_frame::ethertype_pup:
+//				os << "PUP";
+//				break;
+//			case ethernet_frame::ethertype_sprite:
+//				os << "Sprite";
+//				break;
+//			case ethernet_frame::ethertype_ipv4:
+//				os << "IPv4";
+//				break;
+//			case ethernet_frame::ethertype_arp:
+//				os << "ARP";
+//				break;
+//			case ethernet_frame::ethertype_rarp:
+//				os << "Reverse ARP";
+//				break;
+//			case ethernet_frame::ethertype_atalk:
+//				os << "Appletalk";
+//				break;
+//			case ethernet_frame::ethertype_aarp:
+//				os << "Appletalk ARP";
+//				break;
+//			case ethernet_frame::ethertype_ieee8021q:
+//				os << "IEEE 802.1q";
+//				break;
+//			case ethernet_frame::ethertype_ipx:
+//				os << "IPX";
+//				break;
+//			case ethernet_frame::ethertype_ipv6:
+//				os << "IPv6";
+//				break;
+//			case ethernet_frame::ethertype_loopback:
+//				os << "Loopback";
+//				break;
+//			case ethernet_frame::ethertype_ieee8021qinq1:
+//				os << "IEEE 802.1QinQ (9100)";
+//				break;
+//			case ethernet_frame::ethertype_ieee8021qinq2:
+//				os << "IEEE 802.1QinQ (9200)";
+//				break;
+//			case ethernet_frame::ethertype_ieee8021qinq3:
+//				os << "IEEE 802.1QinQ (9300)";
+//				break;
+//			case ethernet_frame::ethertype_ieee8021ad:
+//				os << "IEEE 802.1ad";
+//				break;
+//			detault:
+//				os << "Unknown";
+//		}
+//	}
+//
+//	os << ::std::dec << ">";
 
-	os << ">";
+	os.flags(io_flags);
 
 	return os;
 }

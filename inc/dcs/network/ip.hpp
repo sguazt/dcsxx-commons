@@ -39,7 +39,7 @@
 #include <boost/smart_ptr.hpp>
 #include <dcs/assert.hpp>
 #include <dcs/exception.hpp>
-#include <dcs/network/base_packet.hpp>
+#include <dcs/network/pdu.hpp>
 #include <netinet/ip.h> //FIXME: only available on systems conforming to 4.3BSD and SunOS
 #include <iomanip>
 #include <iostream>
@@ -79,7 +79,8 @@ inline
 /**
  * \brief The Internet Protocol (IP) datagram.
  *
- * From RFC791:
+ * The IP datagram header (from RFC791):
+ * <pre>
  *  0                   1                   2                   3
  *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -95,9 +96,9 @@ inline
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |                    Options                    |    Padding    |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *                  Internet Datagram Header
+ * </pre>
  */
-class ip_packet: public base_packet
+class ip_packet: public base_pdu
 {
 	public: virtual ::boost::uint8_t version() const = 0;
 }; // ip_packet
@@ -463,8 +464,11 @@ class ip4_packet: public ip_packet
 template <typename CharT, typename CharTraitsT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os, ip4_packet const& pkt)
 {
+	::std::ios_base::fmtflags io_flags = os.flags();
+
 	os  << "<IPv4::"
-		<< ", ihl: " << ::std::dec << pkt.internet_header_length_field()
+		<< ::std::showbase
+		<< ", ihl: " << ::std::dec << static_cast<unsigned int>(pkt.internet_header_length_field())
 		<< ", tos: " << ::std::hex << static_cast<unsigned int>(pkt.type_of_service_field())
 		<< ", length: " << ::std::dec << pkt.total_length_field()
 		<< ", id: " << ::std::dec << pkt.identification_field()
@@ -477,16 +481,18 @@ template <typename CharT, typename CharTraitsT>
 		<< ", dst: " << pkt.destination_address()
 		<< ", options: ";
 
-		if (pkt.have_options())
-		{
-			os << ::std::hex << pkt.options_field();
-		}
-		else
-		{
-			os << "<empty>";
-		}
+	if (pkt.have_options())
+	{
+		os << ::std::hex << pkt.options_field();
+	}
+	else
+	{
+		os << "<empty>";
+	}
 
-		os << ">";
+	os << ">";
+
+	os.flags(io_flags);
 
 	return os;
 }
