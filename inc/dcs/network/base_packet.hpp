@@ -1,7 +1,7 @@
 /**
- * \file dcs/network/byte_order.hpp
+ * \file dcs/network/base_packet.hpp
  *
- * \brief Handle the conversion network <-> host byte order.
+ * \brief Base class for network packets.
  *
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  *
@@ -30,50 +30,26 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_NETWORK_BYTE_ORDER_HPP
-#define DCS_NETWORK_BYTE_ORDER_HPP
+#ifndef DCS_NETWORK_BASE_PACKET_HPP
+#define DCS_NETWORK_BASE_PACKET_HPP
 
 
-#include <arpa/inet.h> // Available in POSIX.1-2001 systems
+#include <boost/cstdint.hpp>
 
 
 namespace dcs { namespace network {
 
-template <typename T>
-struct byte_order
+class base_packet
 {
-	T host_to_network(T v);
-	T network_to_host(T v);
-};
-
-template <>
-struct byte_order< ::boost::uint32_t >
-{
-	static ::boost::uint32_t host_to_network(::boost::uint32_t v)
+	public: virtual ~base_packet()
 	{
-		return ::htonl(v);
 	}
 
-	static ::boost::uint32_t network_to_host(::boost::uint32_t v)
-	{
-		return ::ntohl(v);
-	}
-};
+	public: virtual ::boost::uint8_t const* payload() const = 0;
 
-template <>
-struct byte_order< ::boost::uint16_t >
-{
-	static ::boost::uint16_t host_to_network(::boost::uint16_t v)
-	{
-		return ::htons(v);
-	}
-
-	static ::boost::uint16_t network_to_host(::boost::uint16_t v)
-	{
-		return ::ntohs(v);
-	}
-};
+	public: virtual ::boost::uint32_t payload_size() const = 0;
+}; // base_packet
 
 }} // Namespace dcs::network
 
-#endif // DCS_NETWORK_BYTE_ORDER_HPP
+#endif // DCS_NETWORK_BASE_PACKET_HPP
