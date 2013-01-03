@@ -440,9 +440,9 @@ class ip4_packet: public ip_packet
 				   DCS_EXCEPTION_THROW(::std::runtime_error,
 									   "IP packet shorter than expected"));
 
-		if ((hlen - sizeof(ip4_header)) > 0)
+		if ((hlen - header_size) > 0)
 		{
-			p_opts_hdr_ = reinterpret_cast<ip4_options_header const*>(data+sizeof(ip4_header));
+			p_opts_hdr_ = reinterpret_cast<ip4_options_header const*>(data+header_size);
 		}
 
 		p_data_ = data+hlen;
