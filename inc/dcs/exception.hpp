@@ -50,6 +50,6 @@ inline ::std::string make_msg(::std::string const& m, char const* func_name)
 //#define DCS_EXCEPTION_THROW(e,m) throw e(::dcs::exception::detail::make_msg(m))
 #define DCS_EXCEPTION_THROW(e,m) throw e(::dcs::exception::detail::make_msg(m, BOOST_CURRENT_FUNCTION))
 
-#define DCS_EXCEPTION_RETHROW(e) throw e;
+#define DCS_EXCEPTION_RETHROW(e) throw;
 
 #endif // DCS_EXCEPTION_HPP
