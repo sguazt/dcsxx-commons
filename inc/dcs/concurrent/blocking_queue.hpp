@@ -82,14 +82,14 @@ class blocking_queue
 
 	public: bool empty() const
 	{
-		boost::mutex::scoped_lock lock(mutex_);
+		::boost::unique_lock< ::boost::mutex > lock(mutex_);
 
 		return queue_.empty();
 	}
 
 	public: size_type size() const
 	{
-		boost::mutex::scoped_lock lock(mutex_);
+		::boost::unique_lock< ::boost::mutex > lock(mutex_);
 
 		return queue_.size();
 	}
@@ -167,7 +167,7 @@ class blocking_queue
 	private: template <typename Rep, typename Period>
 			 bool push(value_type const& val, bool wait, ::boost::chrono::duration<Rep,Period> const& wait_time)
 	{
-		boost::mutex::scoped_lock lock(mutex_);
+		::boost::unique_lock< ::boost::mutex > lock(mutex_);
 		if (wait)
 		{
 			while (this->bounded() && queue_.size() >= cap_)
@@ -200,7 +200,7 @@ class blocking_queue
 	private: template <typename Rep, typename Period>
 			 bool pop(value_type& val, bool wait, ::boost::chrono::duration<Rep,Period> const& wait_time)
 	{
-		boost::mutex::scoped_lock lock(mutex_);
+		::boost::unique_lock< ::boost::mutex > lock(mutex_);
 		if (wait)
 		{
 			while (queue_.empty())
@@ -235,7 +235,7 @@ class blocking_queue
 	private: template <typename Rep, typename Period>
 			 bool peek(value_type& val, bool front, bool wait, ::boost::chrono::duration<Rep,Period> const& wait_time)
 	{
-		boost::mutex::scoped_lock lock(mutex_);
+		::boost::unique_lock< ::boost::mutex > lock(mutex_);
 		if (wait)
 		{
 			while (queue_.empty())
