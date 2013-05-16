@@ -140,6 +140,108 @@ DCS_TEST_DEF( test_prev_partition )
 	}
 }
 
+DCS_TEST_DEF( test_k_partition_class )
+{
+	DCS_TEST_TRACE( "Test case: k-Partition - Class" );
+
+	typedef char value_type;
+
+	const ::std::size_t sz(4);
+	const ::std::size_t k(2);
+
+	::std::vector<value_type> v(sz);
+	for (::std::size_t i = 0; i < sz; ++i)
+	{
+		v[i] = 'a' + i;
+	}
+
+	dcs::algorithm::lexicographic_k_partition part(sz,k);
+
+	DCS_TEST_TRACE( "Test case: k-Partition - Class - increment" );
+
+	while (part.has_next())
+	{
+		DCS_DEBUG_STREAM << part << " : " << part.num_subsets() << " : ";
+
+		dcs::algorithm::partition_traits<value_type>::subset_container subs = part(v.begin(), v.end());
+
+		DCS_DEBUG_STREAM << subs << ::std::endl;
+
+		++part;
+	}
+
+	DCS_TEST_TRACE( "Test case: k-Partition - Class - decrement" );
+
+	while (part.has_prev())
+	{
+		DCS_DEBUG_STREAM << part << " : " << part.num_subsets() << " : ";
+
+		dcs::algorithm::partition_traits<value_type>::subset_container subs = part(v.begin(), v.end());
+
+		DCS_DEBUG_STREAM << subs << ::std::endl;
+
+		--part;
+	}
+}
+
+DCS_TEST_DEF( test_next_k_partition )
+{
+	DCS_TEST_TRACE( "Test case: k-Partition - next_partition function" );
+
+	typedef char value_type;
+
+	const ::std::size_t sz(4);
+	const ::std::size_t k(2);
+
+	::std::vector<value_type> v(sz);
+	for (::std::size_t i = 0; i < sz; ++i)
+	{
+		v[i] = 'a' + i;
+	}
+
+	dcs::algorithm::lexicographic_k_partition part(sz,k);
+
+	while (part.has_next())
+	{
+		DCS_DEBUG_STREAM << part << " : " << part.num_subsets() << " : ";
+
+		dcs::algorithm::partition_traits<value_type>::subset_container subs;
+
+		subs = dcs::algorithm::next_partition(v.begin(), v.end(), part);
+
+		DCS_DEBUG_STREAM << subs << ::std::endl;
+	}
+}
+
+DCS_TEST_DEF( test_prev_k_partition )
+{
+	DCS_TEST_TRACE( "Test case: k-Partition - prev_partition function" );
+
+	typedef char value_type;
+
+	const ::std::size_t sz(4);
+	const ::std::size_t k(2);
+
+	::std::vector<value_type> v(sz);
+	for (::std::size_t i = 0; i < sz; ++i)
+	{
+		v[i] = 'a' + i;
+	}
+
+	dcs::algorithm::lexicographic_k_partition part(sz, k, false);
+
+	while (part.has_prev())
+	{
+		DCS_DEBUG_STREAM << part << " : " << part.num_subsets() << " : ";
+
+		dcs::algorithm::partition_traits<value_type>::subset_container subs;
+
+		subs = dcs::algorithm::prev_partition(v.begin(), v.end(), part);
+
+		DCS_DEBUG_STREAM << subs << ::std::endl;
+	}
+}
+
 
 int main()
 {
@@ -149,5 +251,8 @@ int main()
 		DCS_TEST_DO(test_partition_class);
 		DCS_TEST_DO(test_next_partition);
 		DCS_TEST_DO(test_prev_partition);
+		DCS_TEST_DO(test_k_partition_class);
+		DCS_TEST_DO(test_next_k_partition);
+		DCS_TEST_DO(test_prev_k_partition);
 	DCS_TEST_END();
 }
