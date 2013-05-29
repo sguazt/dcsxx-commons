@@ -1,5 +1,5 @@
 /**
- * \file dcs/algorithm/lexicographic_partition.hpp
+ * \file dcs/algorithm/partition.hpp
  *
  * \brief Generate a set partition in lexicographic order.
  *
@@ -84,7 +84,7 @@ class lexicographic_partition
 	: n_(n),
 	  kappa_(n),
 	  M_(n),
-	  has_prev_(true),
+	  has_prev_(false),
 	  has_next_(true)
 	{
 		DCS_ASSERT(n_ > 0,
@@ -310,7 +310,7 @@ class lexicographic_k_partition
 	  k_(k),
 	  kappa_(n_),
 	  M_(n_),
-	  has_prev_(true),
+	  has_prev_(false),
 	  has_next_(true)
 	{
 		DCS_ASSERT(n_ > 0,
