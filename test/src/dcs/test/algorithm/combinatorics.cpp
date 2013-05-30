@@ -13,13 +13,18 @@ template <typename CharT, typename CharTraitsT, typename ElemT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os,
                                                     ::std::vector<ElemT> const& v)
 {
-    os << '(';
+    os << "(";
 
-    for (::std::size_t i = 0; i < (v.size()-1); ++i)
-    {
-        os << v[i] << ' ';
-    }
-    os << *(v.end()-1) << ')';
+	for (::std::size_t i = 0; i < v.size(); ++i)
+	{
+		if (i > 0)
+		{
+			os << " ";
+		}
+		os << "'" << v[i] << "'";
+	}
+
+ 	os << ")";
 
     return os;
 }
@@ -30,11 +35,14 @@ template <typename CharT, typename CharTraitsT, typename ElemT>
 {
     os << '(';
 
-    for (::std::size_t i = 0; i < (vv.size()-1); ++i)
-    {
-        os << vv[i] << ' ';
-    }
-    os << *(vv.end()-1) << ')';
+	for (::std::size_t i = 0; i < vv.size(); ++i)
+	{
+		if (i > 0)
+		{
+			os << " ";
+		}
+		os << "'" << vv[i] << "'";
+	}
 
     return os;
 }
@@ -242,6 +250,198 @@ DCS_TEST_DEF( test_prev_k_partition )
 	}
 }
 
+DCS_TEST_DEF( test_subset_class_with_empty )
+{
+	DCS_TEST_TRACE( "Test case: Subset Class with Empty Set" );
+
+	typedef char value_type;
+
+	const ::std::size_t sz(4);
+
+	::std::vector<value_type> v(sz);
+	for (::std::size_t i = 0; i < sz; ++i)
+	{
+		v[i] = 'a' + i;
+	}
+
+	dcs::algorithm::lexicographic_subset subset(sz, true);
+
+	DCS_TEST_TRACE( "Test case: Subset - Class - increment" );
+
+	while (subset.has_next())
+	{
+		DCS_DEBUG_TRACE( "Subset: " << subset << " [size=" << subset.size() << "]" );
+
+		++subset;
+	}
+
+	DCS_TEST_TRACE( "Test case: Subset - Class - decrement" );
+
+	while (subset.has_prev())
+	{
+		DCS_DEBUG_TRACE( "Subset: " << subset << " [size=" << subset.size() << "]" );
+
+		--subset;
+	}
+}
+
+DCS_TEST_DEF( test_subset_class_without_empty )
+{
+	DCS_TEST_TRACE( "Test case: Subset Class without Empty Set" );
+
+	typedef char value_type;
+
+	const ::std::size_t sz(4);
+
+	::std::vector<value_type> v(sz);
+	for (::std::size_t i = 0; i < sz; ++i)
+	{
+		v[i] = 'a' + i;
+	}
+
+	dcs::algorithm::lexicographic_subset subset(sz, false);
+
+	DCS_TEST_TRACE( "Test case: Subset - Class - increment" );
+
+	while (subset.has_next())
+	{
+		DCS_DEBUG_TRACE( "Subset: " << subset << " [size=" << subset.size() << "]" );
+
+		++subset;
+	}
+
+	DCS_TEST_TRACE( "Test case: Subset - Class - decrement" );
+
+	while (subset.has_prev())
+	{
+		DCS_DEBUG_TRACE( "Subset: " << subset << " [size=" << subset.size() << "]" );
+
+		--subset;
+	}
+}
+
+DCS_TEST_DEF( test_next_subset_with_empty )
+{
+	DCS_TEST_TRACE( "Test case: Subset with Empty Set - next_subset function" );
+
+	typedef char value_type;
+
+	const ::std::size_t sz(4);
+
+	::std::vector<value_type> v(sz);
+	for (::std::size_t i = 0; i < sz; ++i)
+	{
+		v[i] = 'a' + i;
+	}
+
+	dcs::algorithm::lexicographic_subset subset(sz);
+
+	while (subset.has_next())
+	{
+		DCS_DEBUG_STREAM << subset << " : [size=" << subset.size() << "] : ";
+
+		dcs::algorithm::subset_traits<value_type>::subset_container subs;
+
+		subs = dcs::algorithm::next_subset(v.begin(), v.end(), subset);
+
+		DCS_DEBUG_STREAM << subs << ::std::endl;
+	}
+}
+
+DCS_TEST_DEF( test_prev_subset_with_empty )
+{
+	DCS_TEST_TRACE( "Test case: Subset with Empty Set - prev_subset function" );
+
+	typedef char value_type;
+
+	const ::std::size_t sz(4);
+
+	::std::vector<value_type> v(sz);
+	for (::std::size_t i = 0; i < sz; ++i)
+	{
+		v[i] = 'a' + i;
+	}
+
+	dcs::algorithm::lexicographic_subset subset(sz);
+
+	while (subset.has_next())
+	{
+		++subset;
+	}
+
+	while (subset.has_prev())
+	{
+		DCS_DEBUG_STREAM << subset << " : [size=" << subset.size() << "] : ";
+
+		dcs::algorithm::subset_traits<value_type>::subset_container subs;
+
+		subs = dcs::algorithm::prev_subset(v.begin(), v.end(), subset);
+
+		DCS_DEBUG_STREAM << subs << ::std::endl;
+	}
+}
+
+DCS_TEST_DEF( test_next_subset_without_empty )
+{
+	DCS_TEST_TRACE( "Test case: Subset without Empty Set - next_subset function" );
+
+	typedef char value_type;
+
+	const ::std::size_t sz(4);
+
+	::std::vector<value_type> v(sz);
+	for (::std::size_t i = 0; i < sz; ++i)
+	{
+		v[i] = 'a' + i;
+	}
+
+	dcs::algorithm::lexicographic_subset subset(sz, false);
+
+	while (subset.has_next())
+	{
+		DCS_DEBUG_STREAM << subset << " : [size=" << subset.size() << "] : ";
+
+		dcs::algorithm::subset_traits<value_type>::subset_container subs;
+
+		subs = dcs::algorithm::next_subset(v.begin(), v.end(), subset);
+
+		DCS_DEBUG_STREAM << subs << ::std::endl;
+	}
+}
+
+DCS_TEST_DEF( test_prev_subset_without_empty )
+{
+	DCS_TEST_TRACE( "Test case: Subset without Empty Set - prev_subset function" );
+
+	typedef char value_type;
+
+	const ::std::size_t sz(4);
+
+	::std::vector<value_type> v(sz);
+	for (::std::size_t i = 0; i < sz; ++i)
+	{
+		v[i] = 'a' + i;
+	}
+
+	dcs::algorithm::lexicographic_subset subset(sz, false);
+
+	while (subset.has_next())
+	{
+		++subset;
+	}
+
+	while (subset.has_prev())
+	{
+		DCS_DEBUG_STREAM << subset << " : [size=" << subset.size() << "] : ";
+
+		dcs::algorithm::subset_traits<value_type>::subset_container subs;
+
+		subs = dcs::algorithm::prev_subset(v.begin(), v.end(), subset);
+
+		DCS_DEBUG_STREAM << subs << ::std::endl;
+	}
+}
+
 
 int main()
 {
@@ -254,5 +454,11 @@ int main()
 		DCS_TEST_DO(test_k_partition_class);
 		DCS_TEST_DO(test_next_k_partition);
 		DCS_TEST_DO(test_prev_k_partition);
+		DCS_TEST_DO(test_subset_class_with_empty);
+		DCS_TEST_DO(test_next_subset_with_empty);
+		DCS_TEST_DO(test_prev_subset_with_empty);
+		DCS_TEST_DO(test_subset_class_without_empty);
+		DCS_TEST_DO(test_next_subset_without_empty);
+		DCS_TEST_DO(test_prev_subset_without_empty);
 	DCS_TEST_END();
 }
