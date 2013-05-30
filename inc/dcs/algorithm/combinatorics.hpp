@@ -38,6 +38,7 @@
 #include <dcs/algorithm/mapping.hpp>
 #include <dcs/algorithm/partition.hpp>
 #include <dcs/algorithm/permutation.hpp>
+#include <dcs/algorithm/subset.hpp>
 
 
 #endif // DCS_ALGORITHM_COMBINATORICS_HPP
