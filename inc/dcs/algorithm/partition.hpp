@@ -203,11 +203,11 @@ class lexicographic_partition
 	public: template <typename ElemT>
 			typename partition_traits<ElemT>::subset_container operator()(::std::vector<ElemT> const& v) const
 	{
-		typename partition_traits<ElemT>::subset_container subs(this->num_subsets());
-
 		DCS_ASSERT(v.size() == n_,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
 									   "Size does not match"));
+
+		typename partition_traits<ElemT>::subset_container subs(this->num_subsets());
 
 		for (::std::size_t i = 0; i < n_; ++i)
 		{
@@ -453,11 +453,11 @@ class lexicographic_k_partition
 	public: template <typename ElemT>
 			typename partition_traits<ElemT>::subset_container operator()(::std::vector<ElemT> const& v) const
 	{
-		typename partition_traits<ElemT>::subset_container subs(this->num_subsets());
-
 		DCS_ASSERT(v.size() == n_,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
 									   "Size does not match"));
+
+		typename partition_traits<ElemT>::subset_container subs(this->num_subsets());
 
 		for (::std::size_t i = 0; i < n_; ++i)
 		{
