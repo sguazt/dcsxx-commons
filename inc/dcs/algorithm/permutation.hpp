@@ -330,6 +330,25 @@ inline
 																	   ::std::distance(mid, last));
 }
 
+template <typename BidiIteratorT>
+bool next_partial_permutation(BidiIteratorT first,
+							  BidiIteratorT middle,
+							  BidiIteratorT last)
+{
+	::std::reverse(middle, last);
+	return ::std::next_permutation(first, last);
+}
+
+template <typename BidiIteratorT>
+bool prev_partial_permutation(BidiIteratorT first,
+							  BidiIteratorT middle,
+							  BidiIteratorT last)
+{
+	bool result = ::std::prev_permutation(first, last);
+	::std::reverse(middle, last);
+	return result;
+}
+
 }} // Namespace dcs::algorithm
 
 
