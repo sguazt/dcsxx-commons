@@ -52,9 +52,10 @@ struct subset_traits
 {
 	typedef ValueT value_type;
 	typedef ::std::vector<value_type> subset_container;
-	typedef typename subset_container::iterator subset_iterator;
-	typedef typename subset_container::const_iterator subset_const_iterator;
+	typedef typename subset_container::iterator subset_container_iterator;
+	typedef typename subset_container::const_iterator subset_container_const_iterator;
 };
+
 
 class lexicographic_subset
 {
