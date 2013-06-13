@@ -78,12 +78,49 @@ class matrix: public base_matrix<ValueT>
 		}
 	}
 
+	public: matrix(matrix<value_type,properties_type> const& m)
+	: nr_(m.nr_),
+	  nc_(m.nc_),
+	  n_(m.n_),
+	  data_((n_ > 0) ? new value_type[n_] : 0)
+	{
+		if (data_)
+		{
+			::std::copy(m.begin_data(), m.end_data(), data_);
+		}
+	}
+
 	public: ~matrix()
 	{
 		if (data_)
 		{
 			delete[] data_;
 		}
+	}
+
+	public: matrix<value_type>& operator=(matrix<value_type,properties_type> const& that)
+	{
+		if (this != &that)
+		{
+			nr_ = that.nr_;
+			nc_ = that.nc_;
+			n_ = that.n_;
+			if (data_)
+			{
+				delete[] data_;
+			}
+			if (n_ > 0)
+			{
+				data_ = new value_type[n_];
+				::std::copy(that.begin_data(), that.end_data(), data_);
+			}
+			else
+			{
+				data_ = 0;
+			}
+		}
+
+		return *this;
 	}
 
 	public: size_type leading_dimension() const

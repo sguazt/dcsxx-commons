@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <dcs/assert.hpp>
+#include <dcs/assert.hpp>
 #include <dcs/exception.hpp>
 #include <stdexcept>
 
@@ -48,7 +49,7 @@ struct default_vector_properties { };
 
 
 template <typename ValueT, typename PropsT = default_vector_properties>
-class vector
+class vector: public base_array<ValueT>
 {
 	public: typedef ValueT value_type;
 	public: typedef PropsT properties_type;
@@ -71,12 +72,46 @@ class vector
 		}
 	}
 
+	public: vector(vector<value_type> const& v)
+	: n_(v.n_),
+	  data_((n_ > 0) ? new value_type[n_] : 0)
+	{
+		if (data_)
+		{
+			::std::copy(v.begin_data(), v.end_data(), data_);
+		}
+	}
+
 	public: ~vector()
 	{
 		if (data_)
 		{
 			delete[] data_;
 		}
+	}
+
+	public: vector<value_type> operator=(vector<value_type> const& that)
+	{
+		if (this != &that)
+		{
+			n_ = that.n_;
+
+			if (data_)
+			{
+				delete[] data_;
+			}
+			if (n_ > 0)
+			{
+				data_ = new value_type[n_];
+				::std::copy(that.begin_data(), that.end_data(), data_);
+			}
+			else
+			{
+				data_ = 0;
+			}
+		}
+
+		return *this;
 	}
 
 	public: value_type& operator()(size_type i)
@@ -128,7 +163,7 @@ class vector
 	{
 		if (!preserve || !n_ || !n)
 		{
-			if (n_ > 0)
+			if (data_)
 			{
 				delete[] data_;
 			}
