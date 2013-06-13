@@ -214,7 +214,7 @@ class lexicographic_subset
 			return *this;
 		}
 
-		public: const_iterator& operator++(int)
+		public: const_iterator operator++(int)
 		{
 			const_iterator tmp = *this;
 
@@ -238,7 +238,7 @@ class lexicographic_subset
 			return *this;
 		}
 
-		public: const_iterator& operator--(int)
+		public: const_iterator operator--(int)
 		{
 			const_iterator tmp = *this;
 
