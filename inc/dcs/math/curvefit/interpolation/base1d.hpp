@@ -1,5 +1,5 @@
 /**
- * \file dcs/math/interpolation/base1d.hpp
+ * \file dcs/math/curvefit/interpolation/base1d.hpp
  *
  * \brief Base class for one-dimensional interpolation.
  *
@@ -30,8 +30,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_MATH_INTERPOLATION_BASE1D_HPP
-#define DCS_MATH_INTERPOLATION_BASE1D_HPP
+#ifndef DCS_MATH_CURVEFIT_INTERPOLATION_BASE1D_HPP
+#define DCS_MATH_CURVEFIT_INTERPOLATION_BASE1D_HPP
 
 
 #include <algorithm>
@@ -44,7 +44,7 @@
 #include <vector>
 
 
-namespace dcs { namespace math {
+namespace dcs { namespace math { namespace curvefit {
 
 template <typename RealT>
 class base_1d_interpolator
@@ -214,6 +214,6 @@ class base_1d_interpolator
 	private: const ::std::size_t dj_;
 }; // base_1d_interpolator
 
-}} // Namespace dcs::math
+}}} // Namespace dcs::math::curvefit
 
-#endif // DCS_MATH_INTERPOLATION_BASE1D_HPP
+#endif // DCS_MATH_CURVEFIT_INTERPOLATION_BASE1D_HPP

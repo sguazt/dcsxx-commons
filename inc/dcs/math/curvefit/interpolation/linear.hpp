@@ -1,5 +1,5 @@
 /**
- * \file dcs/math/interpolation/linear.hpp
+ * \file dcs/math/curvefit/interpolation/linear.hpp
  *
  * \brief Piecewise linear interpolation.
  *
@@ -30,16 +30,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_MATH_INTERPOLATION_LINEAR_HPP
-#define DCS_MATH_INTERPOLATION_LINEAR_HPP
+#ifndef DCS_MATH_CURVEFIT_INTERPOLATION_LINEAR_HPP
+#define DCS_MATH_CURVEFIT_INTERPOLATION_LINEAR_HPP
 
 
-#include <dcs/math/interpolation/base1d.hpp>
+#include <dcs/math/curvefit/interpolation/base1d.hpp>
 #include <cstddef>
 //#include <dcs/algorithm/order.hpp>
 
 
-namespace dcs { namespace math {
+namespace dcs { namespace math { namespace curvefit {
 
 template <typename RealT>
 class linear_interpolator: public base_1d_interpolator<RealT>
@@ -151,7 +151,7 @@ class linear_interpolator: public base_1d_interpolator<RealT>
 */
 }; // linear_interpolator
 
-}} // Namespace dcs::math
+}}} // Namespace dcs::math::curvefit
 
 
-#endif // DCS_MATH_INTERPOLATION_LINEAR_HPP
+#endif // DCS_MATH_CURVEFIT_INTERPOLATION_LINEAR_HPP

@@ -1,5 +1,5 @@
 /**
- * \file dcs/math/interpolation.hpp
+ * \file dcs/math/curvefit/interpolation.hpp
  *
  * \brief Function interpolation.
  *
@@ -30,12 +30,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DCS_MATH_INTERPOLATION_HPP
-#define DCS_MATH_INTERPOLATION_HPP
+#ifndef DCS_MATH_CURVEFIT_INTERPOLATION_HPP
+#define DCS_MATH_CURVEFIT_INTERPOLATION_HPP
 
 
-#include <dcs/math/interpolation/base1d.hpp>
-#include <dcs/math/interpolation/linear.hpp>
+#include <dcs/math/curvefit/interpolation/base1d.hpp>
+#include <dcs/math/curvefit/interpolation/linear.hpp>
 
 
-#endif // DCS_MATH_INTERPOLATION_HPP
+#endif // DCS_MATH_CURVEFIT_INTERPOLATION_HPP
