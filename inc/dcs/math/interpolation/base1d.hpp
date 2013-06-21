@@ -74,7 +74,7 @@ class base_1d_interpolator
 
 	}
 
-	public: real_type interpolate(real_type x) const
+	public: real_type operator()(real_type x) const
 	{
 		return do_interpolate(x);
 	}
