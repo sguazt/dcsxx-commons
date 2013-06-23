@@ -1,7 +1,7 @@
 /**
  * \file dcs/algorithm/order.hpp
  *
- * \brief Computed the permutation of indices which makes the given range
+ * \brief Computes the permutation of indices which makes the given range
  *  ordered.
  *
  * \author Marco Guazzone (marco.guazzone@gmail.com)
@@ -36,6 +36,7 @@
 
 
 #include <algorithm>
+#include <cstddef>
 
 
 namespace dcs { namespace algorithm {
@@ -52,7 +53,7 @@ struct index_less_than
 	{
 	}
 
-	bool operator()(const size_t a, const size_t b) const
+	bool operator()(const ::std::size_t a, const ::std::size_t b) const
 	{
 		return *(first_+a) < *(first_+b);
 	}
@@ -73,7 +74,7 @@ struct index_less_than_cmp
 	{
 	}
 
-	bool operator()(const size_t a, const size_t b) const
+	bool operator()(const ::std::size_t a, const ::std::size_t b) const
 	{
 		return comp_(*(first_+a), *(first_+b));
 	}
@@ -86,7 +87,7 @@ struct index_less_than_cmp
 
 
 /**
- * \brief Computed the permutation of indices which makes the given range
+ * \brief Computes the permutation of indices which makes the given range
  *  ordered.
  * \tparam RandomAccessIteratorT The type of the iterator to the input sequence.
  * \tparam ForwardIteratorT The type of the iterator to the resulting sequence
@@ -120,7 +121,7 @@ void order(RandomAccessIteratorT first, RandomAccessIteratorT last, ForwardItera
 
 
 /**
- * \brief Computed the permutation of indices which makes the given range
+ * \brief Computes the permutation of indices which makes the given range
  *  ordered.
  * \tparam RandomAccessIteratorT The type of the iterator to the input sequence.
  * \tparam ForwardIteratorT The type of the iterator to the resulting sequence
