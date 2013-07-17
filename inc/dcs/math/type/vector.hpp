@@ -82,6 +82,17 @@ class vector: public base_array<ValueT>
 		}
 	}
 
+	public: template <typename IterT>
+			vector(IterT first, IterT last)
+	: n_(::std::distance(first, last)),
+	  data_((n_ > 0) ? new value_type[n_] : 0)
+	{
+		if (data_)
+		{
+			::std::copy(first, last, data_);
+		}
+	}
+
 	public: ~vector()
 	{
 		if (data_)
@@ -150,6 +161,16 @@ class vector: public base_array<ValueT>
 	}
 
 	public: value_type const& at(size_type i) const
+	{
+		return operator()(i);
+	}
+
+	public: value_type& operator[](size_type i)
+	{
+		return operator()(i);
+	}
+
+	public: value_type const& operator[](size_type i) const
 	{
 		return operator()(i);
 	}
