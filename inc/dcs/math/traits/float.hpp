@@ -167,6 +167,23 @@ struct float_traits<T, typename ::boost::enable_if< ::boost::is_floating_point<T
 		return essentially_greater_equal(x, y, tolerance);
 	}
 
+	static T min(T x, T y, T tol = tolerance)
+	{
+		if (definitely_less(x, y, tol))
+		{
+			return x;
+		}
+		return y;
+	}
+
+	static T max(T x, T y, T tol = tolerance)
+	{
+		if (definitely_greater(x, y, tol))
+		{
+			return x;
+		}
+		return y;
+	}
 
 /*
 bool is_nan(float f)
