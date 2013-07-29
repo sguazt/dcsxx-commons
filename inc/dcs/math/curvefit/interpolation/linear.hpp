@@ -54,7 +54,7 @@ class linear_interpolator: public base_1d_interpolator<RealT>
 
 	public: template <typename XIterT, typename YIterT>
 			linear_interpolator(XIterT first_x, XIterT last_x, YIterT first_y, YIterT last_y)
-	: base_type(first_x, last_x, first_y, last_y, 2)
+	: base_type(first_x, last_x, first_y, last_y, 1, 2)
 	{
 	}
 
