@@ -40,6 +40,7 @@
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
 #include <dcs/exception.hpp>
+#include <dcs/math/traits/float.hpp>
 #include <stdexcept>
 #include <vector>
 
@@ -53,11 +54,12 @@ class base_1d_interpolator
 
 
 	public: template <typename XIterT, typename YIterT>
-			base_1d_interpolator(XIterT first_x, XIterT last_x, YIterT first_y, YIterT last_y, ::std::size_t order)
+			base_1d_interpolator(XIterT first_x, XIterT last_x, YIterT first_y, YIterT last_y, ::std::size_t order, ::std::size_t m)
 	: xx_(first_x, last_x),
 	  yy_(first_y, last_y),
 	  n_(xx_.size()),
-	  m_(order+1),
+	  ord_(order),
+	  m_(m),
 	  jsav_(0),
 	  cor_(0),
 	  dj_(::std::max(::std::size_t(1), static_cast< ::std::size_t >(::std::pow(n_, 0.25))))
@@ -65,9 +67,15 @@ class base_1d_interpolator
 		DCS_ASSERT(n_ >= 2,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
 									   "Invalid number of interpolating points"));
-		DCS_ASSERT(m_ >= 2,
+		DCS_ASSERT(ord_ >= 1,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
 									   "Invalid interpolation order"));
+		DCS_ASSERT(m_ >= 2,
+				   DCS_EXCEPTION_THROW(::std::invalid_argument,
+									   "Invalid number of local points"));
+		DCS_ASSERT(m_ >= ord_,
+				   DCS_EXCEPTION_THROW(::std::invalid_argument,
+									   "Interpolation order cannot be greater than the number of local points"));
 		DCS_ASSERT(m_ <= n_,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
 									   "Interpolation order cannot be greater than the number of interpolating points"));
@@ -81,7 +89,17 @@ class base_1d_interpolator
 
 	public: ::std::size_t order() const
 	{
-		return m_+1;
+		return ord_;
+	}
+
+	public: ::std::size_t num_nodes() const
+	{
+		return xx_.size();
+	}
+
+	public: ::std::size_t num_values() const
+	{
+		return yy_.size();
 	}
 
 	public: ::std::vector<real_type> nodes() const
@@ -106,7 +124,19 @@ class base_1d_interpolator
 
 	protected: ::std::size_t find(real_type x) const
 	{
-		return cor_ ? hunt(x) : locate(x);
+		//return cor_ ? hunt(x) : locate(x);
+		if (::dcs::math::float_traits<real_type>::approximately_less_equal(x, xx_[0]))
+		{
+			return 0;
+		}
+		for (::std::size_t i = 1; i < n_; ++i)
+		{
+			if (::dcs::math::float_traits<real_type>::approximately_less_equal(x, xx_[i]))
+			{
+				return i-1;
+			}
+		}
+		return n_-1;
 	}
 
 	protected: ::std::size_t locate(real_type x) const
@@ -133,7 +163,7 @@ class base_1d_interpolator
 
 	protected: ::std::size_t hunt(real_type x) const
 	{
-		long ju;
+		long ju(0);
 		::std::size_t inc(1);
 		bool ascnd(xx_[n_-1] >= xx_[0]);
 		long jl(jsav_);
@@ -208,6 +238,7 @@ class base_1d_interpolator
 	private: const ::std::vector<real_type> xx_; ///< Data points
 	private: const ::std::vector<real_type> yy_; ///< Data values
 	private: const ::std::size_t n_; ///< The number of interpolating points
+	private: const ::std::size_t ord_; ///< The order of interpolation
 	private: const ::std::size_t m_; ///< The number of local points
 	private: mutable ::std::size_t jsav_;
 	private: mutable ::std::size_t cor_;
