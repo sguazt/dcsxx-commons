@@ -133,11 +133,10 @@ template <typename T1, typename T2, typename T3>
 inline
 bool rel_close_to(T1 x, T2 y, T3 tol)
 {
-	typedef typename ::dcs::detail::promote_traits<typename ::dcs::detail::promote_traits<T1,T2>::promote_type,T3>::promote_type real_type;
+	//typedef typename ::dcs::detail::promote_traits<typename ::dcs::detail::promote_traits<T1,T2>::promote_type,T3>::promote_type real_type;
 
 	if (::std::isnan(x) || ::std::isnan(y))
-	{
-		// According to IEEE, NaN is different even by itself
+	{ // According to IEEE, NaN is different even by itself
 		return false;
 	}
 	return ::std::abs(x-y)/::std::abs(y) <= tol;
