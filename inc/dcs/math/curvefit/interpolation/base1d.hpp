@@ -45,6 +45,9 @@
 #include <vector>
 
 
+#define DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD 1
+
+
 namespace dcs { namespace math { namespace curvefit {
 
 template <typename RealT>
@@ -59,10 +62,12 @@ class base_1d_interpolator
 	  yy_(first_y, last_y),
 	  n_(xx_.size()),
 	  ord_(order),
-	  m_(m),
-	  jsav_(0),
-	  cor_(0),
+	  m_(m)
+#ifdef DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
+	 ,jsav_(0),
+	  cor_(false),
 	  dj_(::std::max(::std::size_t(1), static_cast< ::std::size_t >(::std::pow(n_, 0.25))))
+#endif // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 	{
 		DCS_ASSERT(n_ >= 2,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
@@ -73,13 +78,12 @@ class base_1d_interpolator
 		DCS_ASSERT(m_ >= 2,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
 									   "Invalid number of local points"));
-		DCS_ASSERT(m_ >= ord_,
-				   DCS_EXCEPTION_THROW(::std::invalid_argument,
-									   "Interpolation order cannot be greater than the number of local points"));
+//		DCS_ASSERT(m_ >= ord_,
+//				   DCS_EXCEPTION_THROW(::std::invalid_argument,
+//									   "Interpolation order cannot be greater than the number of local points"));
 		DCS_ASSERT(m_ <= n_,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
-									   "Interpolation order cannot be greater than the number of interpolating points"));
-
+									   "Number of local points cannot be greater than the number of interpolating points"));
 	}
 
 	public: real_type operator()(real_type x) const
@@ -124,21 +128,16 @@ class base_1d_interpolator
 
 	protected: ::std::size_t find(real_type x) const
 	{
-		//return cor_ ? hunt(x) : locate(x);
-		if (::dcs::math::float_traits<real_type>::approximately_less_equal(x, xx_[0]))
-		{
-			return 0;
-		}
-		for (::std::size_t i = 1; i < n_; ++i)
-		{
-			if (::dcs::math::float_traits<real_type>::approximately_less_equal(x, xx_[i]))
-			{
-				return i-1;
-			}
-		}
-		return n_-1;
+#ifdef DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
+		return cor_ ? hunt(x) : locate(x);
+#else // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
+		return sequential_find(x);
+#endif // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 	}
 
+#ifdef DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
+
+	/// Find the location of a given value using the bisection method.
 	protected: ::std::size_t locate(real_type x) const
 	{
 		bool ascnd(xx_[n_-1] >= xx_[0]);
@@ -146,7 +145,8 @@ class base_1d_interpolator
 		::std::size_t ju(n_-1);
 		while ((ju-jl) > 1)
 		{
-			::std::size_t jm((ju+jl) >> 1);
+			//::std::size_t jm((ju+jl) >> 1);
+			long jm((ju+jl) >> 1);
 			if ((x >= xx_[jm]) == ascnd)
 			{
 				jl = jm;
@@ -156,18 +156,20 @@ class base_1d_interpolator
 				ju = jm;
 			}
 		}
-		cor_ = ::std::abs(jl-jsav_) > dj_ ? 0 : 1;
+		cor_ = ::std::abs(jl-jsav_) > dj_ ? false : true;
 		jsav_ = jl;
-		return ::std::max(::std::size_t(0), ::std::min(n_-m_,jl-((m_-2) >> 1)));
+		return ::std::max(::std::ptrdiff_t(0), ::std::min(static_cast< ::std::ptrdiff_t >(n_-m_), static_cast< ::std::ptrdiff_t >(jl-((m_-2) >> 1))));
 	}
 
+	/// Bracket a specified value inside an interval.
 	protected: ::std::size_t hunt(real_type x) const
 	{
-		long ju(0);
-		::std::size_t inc(1);
 		bool ascnd(xx_[n_-1] >= xx_[0]);
-		long jl(jsav_);
-		if (jl < 0 || jl > static_cast<long>(n_-1))
+		::std::ptrdiff_t jl(jsav_);
+		::std::ptrdiff_t ju(0);
+		::std::size_t inc(1);
+
+		if (jl < 0 || jl > (n_-1))
 		{
 			jl = 0;
 			ju = n_-1;
@@ -177,7 +179,7 @@ class base_1d_interpolator
 			while (true)
 			{
 				ju = jl + inc;
-				if (ju >= static_cast<long>(n_-1))
+				if (ju >= (n_-1))
 				{
 					ju = n_-1;
 					break;
@@ -217,7 +219,7 @@ class base_1d_interpolator
 		}
 		while ((ju-jl) > 1)
 		{
-			long jm((ju+jl) >> 1);
+			::std::size_t jm((ju+jl) >> 1);
 			if ((x >= xx_[jm]) == ascnd)
 			{
 				jl = jm;
@@ -227,22 +229,50 @@ class base_1d_interpolator
 				ju = jm;
 			}
 		}
-		cor_ = ::std::abs(jl-jsav_) > dj_ ? 0 : 1;
+		cor_ = ::std::abs(jl-jsav_) > dj_ ? false : true;
 		jsav_ = jl;
-		return ::std::max(::std::size_t(0), ::std::min(n_-m_,jl-((m_-2)>>1)));
+		return ::std::max(::std::ptrdiff_t(0), ::std::min(static_cast< ::std::ptrdiff_t >(n_-m_), static_cast< ::std::ptrdiff_t >(jl-((m_-2) >> 1))));
 	}
+
+#else // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
+
+	/// Locate a given value using a sequential search
+	protected: ::std::size_t sequential_find(real_type x) const
+	{
+		if (::dcs::math::float_traits<real_type>::approximately_less_equal(x, xx_[0]))
+		{
+			return 0;
+		}
+		for (::std::size_t i = 1; i < n_; ++i)
+		{
+			if (::dcs::math::float_traits<real_type>::approximately_less_equal(x, xx_[i]))
+			{
+				return i-1;
+			}
+		}
+		return n_-1;
+	}
+
+#endif // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 
 	private: virtual real_type do_interpolate(real_type x) const = 0;
 
 
 	private: const ::std::vector<real_type> xx_; ///< Data points
 	private: const ::std::vector<real_type> yy_; ///< Data values
-	private: const ::std::size_t n_; ///< The number of interpolating points
+//	private: const ::std::size_t n_; ///< The number of interpolating points
+	private: const long n_; ///< The number of interpolating points
 	private: const ::std::size_t ord_; ///< The order of interpolation
-	private: const ::std::size_t m_; ///< The number of local points
-	private: mutable ::std::size_t jsav_;
-	private: mutable ::std::size_t cor_;
-	private: const ::std::size_t dj_;
+//	private: const ::std::size_t m_; ///< The number of local points
+	private: const long m_; ///< The number of local points
+#ifdef DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
+//	private: mutable ::std::size_t jsav_;
+//	private: mutable ::std::size_t cor_;
+//	private: const ::std::size_t dj_;
+	private: mutable long jsav_;
+	private: mutable bool cor_;
+	private: const long dj_;
+#endif // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 }; // base_1d_interpolator
 
 }}} // Namespace dcs::math::curvefit
