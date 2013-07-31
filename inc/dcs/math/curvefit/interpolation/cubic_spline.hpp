@@ -36,6 +36,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <dcs/debug.hpp>
 #include <dcs/math/curvefit/interpolation/base1d.hpp>
 #include <dcs/math/traits/float.hpp>
 #include <limits>
@@ -84,14 +85,14 @@ namespace detail { namespace /*<unnamed>*/ {
  * \f]
  */
 template <typename RealT, typename InIterT, typename OutIterT>
-void tridiagonal_solver_inplace_old(InIterT subdiag_first, InIterT subdiag_last, InIterT diag_first, InIterT superdiag_first, OutIterT x_first)
+void tridiagonal_solver_inplace(InIterT subdiag_first, InIterT subdiag_last, InIterT diag_first, InIterT superdiag_first, OutIterT x_first)
 {
-	const ::std::size_t n(::std::distance(subdiag_first, subdiag_last)+1);
+	const ::std::size_t n(::std::distance(subdiag_first, subdiag_last));
 
 	::std::vector<RealT> aux_vec(n);
 
 	aux_vec[0] = *superdiag_first / *diag_first;
-	*x_first = *x_first / *diag_first;
+	*x_first /= *diag_first;
 
 	OutIterT x_it;
 
@@ -110,7 +111,7 @@ void tridiagonal_solver_inplace_old(InIterT subdiag_first, InIterT subdiag_last,
 		*x_it = (*x_it - *subdiag_first * x_prev) * m;
 	}
 
-	x_it = x_first+n-1;
+	++x_it;
 	for (::std::ptrdiff_t i = n-1; i >= 0; --i)
 	{
 		const RealT x_succ(*x_it);
@@ -121,8 +122,9 @@ void tridiagonal_solver_inplace_old(InIterT subdiag_first, InIterT subdiag_last,
 	}
 }
 
+/*
 template <typename RealT, typename InIterT, typename OutIterT>
-void tridiagonal_solver_inplace(InIterT subdiag_first, InIterT subdiag_last, InIterT diag_first, InIterT supdiag_first, OutIterT x_first)
+void tridiagonal_solver_inplace_old(InIterT subdiag_first, InIterT subdiag_last, InIterT diag_first, InIterT supdiag_first, OutIterT x_first)
 {
     std::size_t in;
 
@@ -133,30 +135,30 @@ void tridiagonal_solver_inplace(InIterT subdiag_first, InIterT subdiag_last, InI
 	std::vector<RealT> c(supdiag_first, supdiag_first+N);
 	std::vector<RealT> x(x_first, x_first+N);
 
-    /* Allocate scratch space. */
+    // Allocate scratch space.
     double * cprime = new double[N];
 
     if (!cprime) {
-        /* do something to handle error */
+        // do something to handle error
     }
 
     cprime[0] = c[0] / b[0];
     x[0] = x[0] / b[0];
 
-    /* loop from 1 to N - 1 inclusive */
+    // loop from 1 to N - 1 inclusive
     for (in = 1; in < N; in++) {
         double m = 1.0 / (b[in] - a[in] * cprime[in - 1]);
         cprime[in] = c[in] * m;
         x[in] = (x[in] - a[in] * x[in - 1]) * m;
     }
 
-    /* loop from N - 2 to 0 inclusive, safely testing loop end condition */
+    // loop from N - 2 to 0 inclusive, safely testing loop end condition
     for (in = N - 1; in-- > 0; )
     {
         x[in] = x[in] - cprime[in] * x[in + 1];
     }
 
-    /* free scratch space */
+    // free scratch space 
     delete[] cprime;
 
 	for (in = 0; in < N; ++in)
@@ -165,17 +167,111 @@ void tridiagonal_solver_inplace(InIterT subdiag_first, InIterT subdiag_last, InI
 		++x_first;
 	}
 }
+*/
 
 }} // Namespace detail::<unnamed>
 
 
 enum spline_boundary_condition_category
 {
-	clamped_spline_boundary_condition,
-	natural_spline_boundary_condition,
-	not_a_knot_spline_boundary_condition
+	clamped_spline_boundary_condition, ///< Clamped cubic spline boundary condition
+	natural_spline_boundary_condition, ///< Natural cubic spline boundary condition
+	not_a_knot_spline_boundary_condition, ///< Not-a-knot boundary condition
+	parabolic_spline_boundary_condition, ///< Parabolically terminated spline boundary condition
+	curvature_adjusted_spline_boundary_condition ///< Endpoint curvature-adjusted spline boundary condition
 };
 
+/**
+ * \brief Cubic spline interpolation.
+ *
+ * Suppose that \f$\{(xk , yk)\}_{k=0}^n\f$ are \f$n+1\f$ points, where
+ * \f$x_0<x_1<\cdots<x_n\f$.
+ * The function \f$S(x)\f$ is called a <b>cubic spline</b> if there exist
+ * \f$n\f$ cubic polynomials \f$S_k(x)\f$ with coefficients \f$s_{k,0}\f$,
+ * \f$s_{k,1}\f$, \f$s_{k,2}\f$, and \f$s_k,3\f$ that satisfy the following
+ * properties:
+ * -# \f$S(x)=S_k(x)=s_{k,0}+s_{k,1}(x-x_k)+s_{k,2}(x-x_k)^2+s_{k,3}(x-x_k)^3\f$
+ *  for \f$x\in[x_k,x_{k+1}]\f$ and \f$k=0,1,\ldots,n-1\f$
+ * -# \f$S(x_k)=y_k\f$, for \f$k=0,1,\ldots,n\f$,
+ * -# \f$S_k(x_{k+1})=S_{k+1}(x_{k+1})\f$, for \f$k=0,1,\ldots,n-2\f$,
+ * -# \f$S_k'(x_{k+1})=S_{k+1}'(x_{k+1})\f$, for \f$k=0,1,\ldots,n-2\f$,
+ * -# \f$S_k''(x_{k+1})=S_{k+1}''(x_{k+1})\f$, for \f$k=0,1,\ldots,n-2\f$.
+ * .
+ *
+ * To construct a cubic spline, we need to solve the following linear system:
+ * \f[
+ *  h_{k-1}m_{k-1}+2(h_{k-1}+h_{k})m_{k}+h_km_{k+1} = u_k, \quad k=1,2,\ldots,n-1
+ * \f]
+ * where \f$m_k\f$, for \f$k=0,1,\ldots,n\f$ are the unknowns and:
+ * \f{align}
+ *  h_k &= x_{k+1}-x_k,\\
+ *  d_k &= \frac{y_{k+1}-y_k}{h_k},\\
+ *  u_k &= 6(d_k-d_{k-1}),\\
+ * \f}
+ * for \f$k=1,2,\ldots,n-1\f$.
+ *
+ * This is a tridiagonal linear system with $n-1$ linear equations involving
+ * \f$n+1\f$ unknowns.
+ * Thus two additional equations are needed in order to eliminate \f$m_0\f$ from
+ * the first equation and \f$m_n\f$ from the \f$(n-1)\f$-st equation.
+ * This is obtained by fixing the so called <em>boundary conditions</em>.
+ *
+ * The currently supported boundary conditions are:
+ * - <b>Clamped (or complete)) spline condition</b>: it consists in specifying
+ *   both \f$S'(x_0)\f$ and \f$S'(x_n)\f$, thus resulting in:
+ *   \f{align}
+ *    m_0 &= \frac{3}{h_0}(d_0-S'(x_0))-\frac{m_1}{2},\\
+ *    m_n &= \frac{3}{h_{n-1}}(S'(x_n)-d_{n-1})-\frac{m_{n-1}}{2}.
+ *   \f}
+ * - <b>Natural (or free) spline condition</b>: it consists in setting
+ *   \f$S''(x_0)=S''(x_n)=0\f$, thus resulting in:
+ *   \f{align}
+ *    m_0 &= 0,\\
+ *    m_n &= 0.
+ *   \f}
+ *   It is sometimes referred to as zero curvature boundary condition.
+ * - <b>Not-a-Knot spline condition</b>: it consists in extrapolating
+ *   \f$S''(x)\f$ to the endpoints,(i.e., it extrapolates S''(x_0) from the
+ *   interior nodes at \f$x_1$ and \f$x_2\f$, and \f$S''(x_n)$ from the interior
+ *   nodes at \f$x_{n-1}\f$ and \f$x_{n-2}\f$), thus resulting in:
+ *   \f{align}
+ *    m_0 &= m_1-\frac{h_0(m_2-m_1)}{h_1},\\
+ *    m_n &= m_{n-1}+\frac{h_{n-1}(m_{n-1}-m_{n-2})}{h_{n-2}}.
+ *   \f}
+ *   It is sometimes referred to as third derivative matching boundary condition
+ *   since it is equivalent to require that:
+ *   \f{align}
+ *    S_0'''(x_1) &= S_1'''(x_1),\\
+ *    S_{n-2}'''(x_{n-1}) &= S_{n-1}'''(x_{n-1}).
+ *   \f}
+ *   where \f$S_i'''(x)=6d_i$.
+ * - <b>Parabolically terminated spline</b>: it consists in requiring that
+ *   \f$S''(x)\f$ is constant near the endpoints (i.e., that \f$S'''(x)=0\f$
+ *   both on the interval \f$[x_0,x_1]\f$ and on \f$[x_{n-1},x_n]\f$), thus
+ *   resulting in:
+ *   \f{align}
+ *    m_0 &= m_1,\\
+ *    m_n &= m_{n-1}.
+ *   \f}
+ * - <b>Endpoint curvature-adjusted spline</b>: it consists in specifying
+ *   \f$S''(x)\f$ at each endpoint, thus resulting in:
+ *   \f{align}
+ *    m_0 &= S''(x_0),\\
+ *    m_n &= S''(x_n).
+ *   \f}
+ * .
+ *
+ * References:
+ * -# <em>Carl de Boor.</em>
+ *    <b>A Practical Guide to Splines, Revised Edition.</b>
+ *    Spinger-Verlag New York, Inc., 2001.
+ * -# <em>John H. Mathews and Kurtis K. Fink.</em>
+ *    <b>Numerical Methods Using MATLAB, 4th Edition.</b>
+ *    Pearson, 2004.
+ * .
+ *
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
+ */
 template <typename RealT>
 class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 {
@@ -193,12 +289,12 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 									  YIterT first_y,
 									  YIterT last_y,
 									  spline_boundary_condition_category boundary_condition,
-									  real_type yl = -::std::numeric_limits<real_type>::infinity(),
-									  real_type yr = ::std::numeric_limits<real_type>::infinity())
-	: base_type(first_x, last_x, first_y, last_y, 3, 3),
+									  real_type lb = -::std::numeric_limits<real_type>::infinity(),
+									  real_type ub = ::std::numeric_limits<real_type>::infinity())
+	: base_type(first_x, last_x, first_y, last_y, 3, 2),
 	  bound_cond_(boundary_condition),
-	  yl_(yl),
-	  yr_(yr),
+	  lb_(lb),
+	  ub_(ub),
 	  m_(this->num_nodes())
 	{
 		this->init();
@@ -206,6 +302,11 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 
 	public: ::std::vector<real_type> coefficients(::std::size_t k) const
 	{
+		// pre: k < n
+		DCS_ASSERT( k < (this->num_nodes()-1),
+					DCS_EXCEPTION_THROW( ::std::invalid_argument,
+										 "Spline coefficients are defined for k=0,...,N-2, where N is the number of nodes" ));
+
 		const real_type h(this->node(k+1)-this->node(k));
 		const real_type d((this->value(k+1)-this->value(k))/h);
 
@@ -218,8 +319,29 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 		return coeffs;
 	}
 
+	public: real_type leftmost_endpoint() const
+	{
+		return lb_;
+	}
+
+	public: real_type rightmost_endpoint() const
+	{
+		return ub_;
+	}
+
+	public: spline_boundary_condition_category boundary_condition() const
+	{
+		return bound_cond_;
+	}
+
 	private: void init()
 	{
+		// pre
+		DCS_ASSERT( (bound_cond_ != clamped_spline_boundary_condition && bound_cond_ != curvature_adjusted_spline_boundary_condition)
+					|| (::std::isfinite(lb_) && ::std::isfinite(ub_)),
+					DCS_EXCEPTION_THROW( ::std::invalid_argument,
+										 "Endpoints must be finite for the specified boundary conditions" ));
+
 		const ::std::size_t n(this->num_nodes()-1);
 
 		// check nodes to ensure they are a strictly increasing sequence
@@ -231,7 +353,6 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 									"Node sequence is not a strictly increasing sequence");
 			}
 		}
-
 
 		/*
 		 * For \f$k=0,\ldots,n-1\f$, let
@@ -274,13 +395,12 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 		switch (bound_cond_)
 		{
 			case clamped_spline_boundary_condition:
-				//FIXME: review
-				H_supdiag[0] = this->node(2)-this->node(1); // h_1
 				H_diag[0] = 1.5*(this->node(1)-this->node(0))+2*(this->node(2)-this->node(1)); // \frac{3}{2}*h_0 + 2*h_1
-				m_[0] = 6.0*((this->value(2)-this->value(1))/(this->node(2)-this->node(1))-(this->value(1)-this->value(0))/(this->node(1)-this->node(0))) - 3.0*((this->value(1)-this->value(0))/(this->node(1)-this->node(0))-yl_); // u_1 - 3*(d_2-S'(x_0))
+				H_supdiag[0] = this->node(2)-this->node(1); // h_1
+				m_[1] = 6.0*((this->value(2)-this->value(1))/(this->node(2)-this->node(1))-(this->value(1)-this->value(0))/(this->node(1)-this->node(0))) - 3.0*((this->value(1)-this->value(0))/(this->node(1)-this->node(0))-lb_); // u_1 - 3*(d_0-S'(x_0))
 				H_subdiag[n-2] = this->node(n-1)-this->node(n-2); // h_{n-2}
 				H_diag[n-2] = 2.0*(this->node(n-1)-this->node(n-2))+1.5*(this->node(n)-this->node(n-1)); // 2*h_{n-2} + \frac{3}{2}*h_{n-1}
-				m_[n] = 6.0*((this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1))-(this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2))) - 3.0*(yr_-(this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1))); // u_{n-1} - 3*(S'(x_{n-1}-d_{n-1})
+				m_[n-1] = 6.0*((this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1))-(this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2))) - 3.0*(ub_-(this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1))); // u_{n-1} - 3*(S'(x_{n-1}-d_{n-1})
 				break;
 			case natural_spline_boundary_condition:
 				m_[0] = m_[n] = 0;
@@ -292,19 +412,34 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 				m_[n-1] = 6.0*((this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1))-(this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2))); // u_{n-1}
 				break;
 			case not_a_knot_spline_boundary_condition:
-				//FIXME: review
-				H_supdiag[0] = 3.0*(this->node(1)-this->node(0)) + 2.0*(this->node(2)-this->node(1)) + (this->node(1)-this->node(0))*(this->node(1)-this->node(0))/(this->node(2)-this->node(1)); // 3*h_0 + 2*h_1 + \frac{h_0^2}{h_1}
-				H_diag[0] = (this->node(2)-this->node(1)) - (this->node(1)-this->node(0))*(this->node(1)-this->node(0))/(this->node(2)-this->node(1)); // h_1 - \frac{h_0^2}{h_1}
-				m_[0] = 6.0*((this->value(2)-this->value(1))/(this->node(2)-this->node(1))-(this->value(1)-this->value(0))/(this->node(1)-this->node(0))); // u_1
+				H_diag[0] = 3.0*(this->node(1)-this->node(0)) + 2.0*(this->node(2)-this->node(1)) + (this->node(1)-this->node(0))*(this->node(1)-this->node(0))/(this->node(2)-this->node(1)); // 3*h_0 + 2*h_1 + \frac{h_0^2}{h_1}
+				H_supdiag[0] = (this->node(2)-this->node(1)) - (this->node(1)-this->node(0))*(this->node(1)-this->node(0))/(this->node(2)-this->node(1)); // h_1 - \frac{h_0^2}{h_1}
+				m_[1] = 6.0*((this->value(2)-this->value(1))/(this->node(2)-this->node(1))-(this->value(1)-this->value(0))/(this->node(1)-this->node(0))); // u_1
 				H_subdiag[n-2] = (this->node(n-1)-this->node(n-2)) - (this->node(n)-this->node(n-1))*(this->node(n)-this->node(n-1))/(this->node(n-1)-this->node(n-2)); // h_{n-2} - \frac{h_{n-1}^2}{h_{n-2}}
 				H_diag[n-2] = 2.0*(this->node(n-1)-this->node(n-2)) + 3.0*(this->node(n)-this->node(n-1)) + (this->node(n)-this->node(n-1))*(this->node(n)-this->node(n-1))/(this->node(n-1)-this->node(n-2)); // 2*h_{n-2} + 3*h_{n-1} + \frac{h_{n-1}^2}{h_{n-2}}
-				m_[n] = 6.0*((this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1)) - (this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2))); // u_{n-1}
+				m_[n-1] = 6.0*((this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1)) - (this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2))); // u_{n-1}
+				break;
+			case parabolic_spline_boundary_condition:
+				H_diag[0] = 3.0*(this->node(1)-this->node(0)) + 2.0*(this->node(2)-this->node(1)); // 3*h_0 + 2*h_1
+				H_supdiag[0] = this->node(2)-this->node(1); // h_1
+				m_[1] = 6.0*((this->value(2)-this->value(1))/(this->node(2)-this->node(1))-(this->value(1)-this->value(0))/(this->node(1)-this->node(0))); // u_1
+				H_subdiag[n-2] = (this->node(n-1)-this->node(n-2)); // h_{n-2}
+				H_diag[n-2] = 2.0*(this->node(n-1)-this->node(n-2)) + 3.0*(this->node(n)-this->node(n-1)); // 2*h_{n-2} + 3*h_{n-1}
+				m_[n-1] = 6.0*((this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1)) - (this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2))); // u_{n-1}
+				break;
+			case curvature_adjusted_spline_boundary_condition:
+				H_diag[0] = 2.0*(this->node(2)-this->node(0)); // 2*(h_0 + h_1)
+				H_supdiag[0] = this->node(2)-this->node(1); // h_1
+				m_[1] = 6.0*((this->value(2)-this->value(1))/(this->node(2)-this->node(1))-(this->value(1)-this->value(0))/(this->node(1)-this->node(0))) - (this->node(1)-this->node(0))*lb_; // u_1 - h_0*S''(x_0)
+				H_subdiag[n-2] = (this->node(n-1)-this->node(n-2)); // h_{n-2}
+				H_diag[n-2] = 2.0*(this->node(n)-this->node(n-2)); // 2*(h_{n-2} + h_{n-1})
+				m_[n-1] = 6.0*((this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1)) - (this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2))) - (this->node(n)-this->node(n-1))*ub_; // u_{n-1} - h_{n-1}*S''(x_n)
 				break;
 		}
-DCS_DEBUG_TRACE("1.Subdiagonal: " << dcs::debug::to_string(H_subdiag.begin(), H_subdiag.end()));
-DCS_DEBUG_TRACE("1.Diagonal: " << dcs::debug::to_string(H_diag.begin(), H_diag.end()));
-DCS_DEBUG_TRACE("1.Supdiagonal: " << dcs::debug::to_string(H_supdiag.begin(), H_supdiag.end()));
-DCS_DEBUG_TRACE("1.Coefficients: " << dcs::debug::to_string(m_.begin()+1, m_.end()-1));
+//DCS_DEBUG_TRACE("1.Subdiagonal: " << dcs::debug::to_string(H_subdiag.begin(), H_subdiag.end()));
+//DCS_DEBUG_TRACE("1.Diagonal: " << dcs::debug::to_string(H_diag.begin(), H_diag.end()));
+//DCS_DEBUG_TRACE("1.Supdiagonal: " << dcs::debug::to_string(H_supdiag.begin(), H_supdiag.end()));
+//DCS_DEBUG_TRACE("1.Coefficients: " << dcs::debug::to_string(m_.begin()+1, m_.end()-1));
 
 		for (::std::size_t k = 1; k < (n-2); ++k)
 		{
@@ -314,122 +449,46 @@ DCS_DEBUG_TRACE("1.Coefficients: " << dcs::debug::to_string(m_.begin()+1, m_.end
 			m_[k] = 6.0*((this->value(k+1)-this->value(k))/(this->node(k+1)-this->node(k))-(this->value(k)-this->value(k-1))/(this->node(k)-this->node(k-1))); // u_k
 		}
 
-DCS_DEBUG_TRACE("2.Subdiagonal: " << dcs::debug::to_string(H_subdiag.begin(), H_subdiag.end()));
-DCS_DEBUG_TRACE("2.Diagonal: " << dcs::debug::to_string(H_diag.begin(), H_diag.end()));
-DCS_DEBUG_TRACE("2.Supdiagonal: " << dcs::debug::to_string(H_supdiag.begin(), H_supdiag.end()));
-DCS_DEBUG_TRACE("2.Coefficients: " << dcs::debug::to_string(m_.begin()+1, m_.end()-1));
+//DCS_DEBUG_TRACE("2.Subdiagonal: " << dcs::debug::to_string(H_subdiag.begin(), H_subdiag.end()));
+//DCS_DEBUG_TRACE("2.Diagonal: " << dcs::debug::to_string(H_diag.begin(), H_diag.end()));
+//DCS_DEBUG_TRACE("2.Supdiagonal: " << dcs::debug::to_string(H_supdiag.begin(), H_supdiag.end()));
+//DCS_DEBUG_TRACE("2.Coefficients: " << dcs::debug::to_string(m_.begin()+1, m_.end()-1));
 		detail::tridiagonal_solver_inplace<real_type>(H_subdiag.begin(),
 													  H_subdiag.end(),
 													  H_diag.begin(),
 													  H_supdiag.begin(),
 													  m_.begin()+1);
-DCS_DEBUG_TRACE("3.Unknowns: " << dcs::debug::to_string(m_.begin(), m_.end()));
-/*
-		::std::vector<real_type> u(n-1);
+//DCS_DEBUG_TRACE("3.Unknowns: " << dcs::debug::to_string(m_.begin(), m_.end()));
+
+		// Compute m_0 and m_n
 		switch (bound_cond_)
 		{
 			case clamped_spline_boundary_condition:
-				// Use a specified first derivative for the lower bound
-				yy2_[0] = -0.5;
-				u[0] = (3.0/(this->node(1)-this->node(0)))*((this->value(1)-this->value(0))/(this->node(1)-this->node(0))-yl_);
+				m_[0] = (3.0/(this->node(1)-this->node(0)))*((this->value(1)-this->value(0))/(this->node(1)-this->node(0))-lb_)-m_[1]/2.0; // \frac{3}{h_0}(d_0-S'(x_0)) - \frac{m_1}{2}
+				m_[n] = (3.0/(this->node(n)-this->node(n-1)))*(ub_-(this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1))) - m_[n-1]/2.0; // \frac{3}{h_{n-1}}(S'(x_n)-d_{n-1}) - \frac{m_{n-1}}{2}
 				break;
 			case natural_spline_boundary_condition:
-				// Use the natural spline for the lower bound
-				yy2_[0] = u[0] = 0;
+				m_[0] = m_[n] = 0;
 				break;
 			case not_a_knot_spline_boundary_condition:
-				//TODO
+				m_[0] = m_[1]-(this->node(1)-this->node(0))*(m_[2]-m_[1])/(this->node(2)-this->node(1)); // m_1 - \frac{h_0(m_2-m_1)}{h_1}
+				m_[n] = m_[n-1]+(this->node(n)-this->node(n-1))*(m_[n-1]-m_[n-2])/(this->node(n-1)-this->node(n-2)); // m_{n-1} + \frac{h_{n-1}(m_{n-1}-m_{n-2})}{h_{n-2}}
+				break;
+			case parabolic_spline_boundary_condition:
+				m_[0] = m_[1]; // m_1
+				m_[n] = m_[n-1]; // m_{n-1}
+				break;
+			case curvature_adjusted_spline_boundary_condition:
+				m_[0] = lb_; // S''(x_0)
+				m_[n] = ub_; // S''(x_n)
 				break;
 		}
-		for (::std::size_t i = 1; i < (n-1); ++i)
-		{
-			real_type sig = (this->node(i)-this->node(i-1))/(this->node(i+1)-this->node(i-1));
-			real_type p = sig*yy2_[i-1]+2;
-			yy2_[i] = (sig-1)/p;
-			u[i] = (this->value(i+1)-this->value(i))/(this->node(i+1)-this->node(i)) - (this->value(i)-this->value(i-1))/(this->node(i)-this->node(i-1));
-			u[i] = (6.0*u[i]/(this->node(i+1)-this->node(i-1))-sig*u[i-1])/p;
-		}
-		real_type qn(0);
-		real_type un(0);
-		switch (bound_cond_)
-		{
-			case clamped_spline_boundary_condition:
-				// Use a specified first derivative for the upper bound
-				qn = 0.5;
-				un = (3.0/(this->node(n-1)-this->node(n-2)))*(yr_-(this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2)));
-				break;
-			case natural_spline_boundary_condition:
-				// Use the natural spline for the upper bound
-				qn = un = 0;
-				break;
-			case not_a_knot_spline_boundary_condition:
-				//TODO
-				break;
-		}
-		yy2_[n-1] = (un-qn*u[n-2])/(qn*yy2_[n-2]+1);
-		for (::std::size_t i = n-2; i > 0; --i)
-		{
-			yy2_[i] = yy2_[i]*yy2_[i+1]+u[i];
-		}
-*/
-/* From MATLAB
-n = length(x); yd = length(y);
-
-dd = ones(yd,1); dx = diff(x); divdif = diff(y,[],2)./dx(dd,:);
-   b=zeros(yd,n);
-   b(:,2:n-1)=3*(dx(dd,2:n-1).*divdif(:,1:n-2)+dx(dd,1:n-2).*divdif(:,2:n-1));
-   if isempty(endslopes)
-   {
-      x31=x(3)-x(1);xn=x(n)-x(n-2);
-      b(:,1)=((dx(1)+2*x31)*dx(2)*divdif(:,1)+dx(1)^2*divdif(:,2))/x31;
-      b(:,n)=...
-      (dx(n-1)^2*divdif(:,n-2)+(2*xn+dx(n-1))*dx(n-2)*divdif(:,n-1))/xn;
-   }
-   else
-   {
-      x31 = 0; xn = 0; b(:,[1 n]) = dx(dd,[2 n-2]).*endslopes;
-   }
-   end
-   dxt = dx(:);
-   c = spdiags([ [x31;dxt(1:n-2);0] ...
-        [dxt(2);2*(dxt(2:n-1)+dxt(1:n-2));dxt(n-2)] ...
-        [0;dxt(2:n-1);xn] ],[-1 0 1],n,n);
-
-   % sparse linear equation solution for the slopes
-   mmdflag = spparms('autommd');
-   spparms('autommd',0);
-   s=b/c;
-   spparms('autommd',mmdflag);
-
-   % construct piecewise cubic Hermite interpolant
-   % to values and computed slopes
-   pp = pwch(x,y,s,dx,divdif); pp.dim = sizey;
-*/
+//DCS_DEBUG_TRACE("4.Unknowns: " << dcs::debug::to_string(m_.begin(), m_.end()));
 	}
 
 	private: real_type do_interpolate(real_type x) const
 	{
-/*
-		const ::std::size_t j(this->find(x));
-		const ::std::size_t jlo(j);
-		const ::std::size_t jhi(j+1);
-
-		const real_type h(this->node(jhi)-this->node(jlo));
-		if (::dcs::math::float_traits<real_type>::essentially_equal(h, 0))
-		{
-			throw ::std::runtime_error("Nodes must be distinct");
-		}
-
-		const real_type a = (this->node(jhi)-x)/h;
-		const real_type b = (x-this->node(jlo))/h;
-
-		return a*this->value(jlo)
-			 + b*this->value(jhi)
-			 + ((::std::pow(a, 3.0)-a)*yy2_[jlo]+(::std::pow(b, 3.0)-b)*yy2_[jhi])
-			 * ::std::pow(h, 2.0)/6.0;
-*/
 		const ::std::size_t k = this->find(x);
-DCS_DEBUG_TRACE("Interpolating x=" << x << " -> k=" << k);//XXX
 		const ::std::vector<real_type> coeffs = this->coefficients(k);
 		const real_type w = x - this->node(k);
 
@@ -438,8 +497,8 @@ DCS_DEBUG_TRACE("Interpolating x=" << x << " -> k=" << k);//XXX
 
 
 	private: spline_boundary_condition_category bound_cond_; ///< The boundary condition category
-	private: real_type yl_; ///< Leftmost endpoint
-	private: real_type yr_; ///< Rightmost endpoint
+	private: real_type lb_; ///< Leftmost endpoint for the boundary condition
+	private: real_type ub_; ///< Rightmost endpoint for the boundary condition
 	private: ::std::vector<real_type> m_; ///< Vector of second derivatives
 }; // cubic_spline_interpolator
 

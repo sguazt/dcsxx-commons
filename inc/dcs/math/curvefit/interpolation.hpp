@@ -35,6 +35,7 @@
 
 
 #include <dcs/math/curvefit/interpolation/base1d.hpp>
+#include <dcs/math/curvefit/interpolation/cubic_spline.hpp>
 #include <dcs/math/curvefit/interpolation/linear.hpp>
 
 
