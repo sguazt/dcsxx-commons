@@ -63,20 +63,20 @@ DCS_TEST_DEF( clamped_cubic_spline_1 )
 	real_type ub(-1);
 	std::vector< std::vector<real_type> > expected_coeffs(n-1);
 	expected_coeffs[0] = std::vector<real_type>(4);
-	expected_coeffs[0][0] = 0;
-	expected_coeffs[0][1] = 0.2;
-	expected_coeffs[0][2] = 0.18;
-	expected_coeffs[0][3] = 0.48;
+	expected_coeffs[0][0] =  0;
+	expected_coeffs[0][1] =  0.2;
+	expected_coeffs[0][2] = -0.18;
+	expected_coeffs[0][3] =  0.48;
 	expected_coeffs[1] = std::vector<real_type>(4);
-	expected_coeffs[1][0] = 0.5;
-	expected_coeffs[1][1] = 1.28;
-	expected_coeffs[1][2] = 1.26;
+	expected_coeffs[1][0] =  0.5;
+	expected_coeffs[1][1] =  1.28;
+	expected_coeffs[1][2] =  1.26;
 	expected_coeffs[1][3] = -1.04;
 	expected_coeffs[2] = std::vector<real_type>(4);
-	expected_coeffs[2][0] = 2.0;
-	expected_coeffs[2][1] = 0.68;
+	expected_coeffs[2][0] =  2.0;
+	expected_coeffs[2][1] =  0.68;
 	expected_coeffs[2][2] = -1.86;
-	expected_coeffs[2][3] = 0.68;
+	expected_coeffs[2][3] =  0.68;
 	real_type x_test(0.5);
 	real_type y_test(0.115);
 
@@ -128,6 +128,17 @@ DCS_TEST_DEF( clamped_cubic_spline_2 )
 	y[2] = 3;
 	real_type lb(0.2);
 	real_type ub(-1);
+	std::vector< std::vector<real_type> > expected_coeffs(n-1);
+	expected_coeffs[0] = std::vector<real_type>(4);
+	expected_coeffs[0][0] =  0.5;
+	expected_coeffs[0][1] =  0.2;
+	expected_coeffs[0][2] = -1.7625;
+	expected_coeffs[0][3] =  1.0625;
+	expected_coeffs[1] = std::vector<real_type>(4);
+	expected_coeffs[1][0] =  0;
+	expected_coeffs[1][1] = -0.1375;
+	expected_coeffs[1][2] =  1.425;
+	expected_coeffs[1][3] = -0.348611111111111;
 
 	dmc::cubic_spline_interpolator<real_type> interp(x.begin(),
 													 x.end(),
@@ -137,6 +148,18 @@ DCS_TEST_DEF( clamped_cubic_spline_2 )
 													 lb,
 													 ub);
 
+	// Check spline coefficients
+	for (std::size_t k = 0; k < (n-1); ++k)
+	{
+		std::vector<real_type> coeffs = interp.coefficients(k);
+
+		for (std::size_t i = 0; i < 4; ++i)
+		{
+			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
+		}
+	}
+	// Check interpolation at nodes
 	for (std::size_t i = 0; i < n; ++i)
 	{
 		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
@@ -226,6 +249,17 @@ DCS_TEST_DEF( natural_cubic_spline_2 )
 	y[0] = 0.5;
 	y[1] = 0;
 	y[2] = 3;
+	std::vector< std::vector<real_type> > expected_coeffs(n-1);
+	expected_coeffs[0] = std::vector<real_type>(4);
+	expected_coeffs[0][0] =  0.5;
+	expected_coeffs[0][1] = -0.6875;
+	expected_coeffs[0][2] = -0;
+	expected_coeffs[0][3] =  0.1875;
+	expected_coeffs[1] = std::vector<real_type>(4);
+	expected_coeffs[1][0] =  0;
+	expected_coeffs[1][1] = -0.125;
+	expected_coeffs[1][2] =  0.5625;
+	expected_coeffs[1][3] = -0.0625;
 
 	dmc::cubic_spline_interpolator<real_type> interp(x.begin(),
 													 x.end(),
@@ -233,6 +267,18 @@ DCS_TEST_DEF( natural_cubic_spline_2 )
 													 y.end(),
 													 dmc::natural_spline_boundary_condition);
 
+	// Check spline coefficients
+	for (std::size_t k = 0; k < (n-1); ++k)
+	{
+		std::vector<real_type> coeffs = interp.coefficients(k);
+
+		for (std::size_t i = 0; i < 4; ++i)
+		{
+			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
+		}
+	}
+	// Check interpolation at nodes
 	for (std::size_t i = 0; i < n; ++i)
 	{
 		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
@@ -321,6 +367,17 @@ DCS_TEST_DEF( notaknot_cubic_spline_2 )
 	y[0] = 0.5;
 	y[1] = 0;
 	y[2] = 3;
+	std::vector< std::vector<real_type> > expected_coeffs(n-1);
+	expected_coeffs[0] = std::vector<real_type>(4);
+	expected_coeffs[0][0] =  0.5;
+	expected_coeffs[0][1] = -0.875;
+	expected_coeffs[0][2] =  0.375;
+	expected_coeffs[0][3] =  0;
+	expected_coeffs[1] = std::vector<real_type>(4);
+	expected_coeffs[1][0] =  0;
+	expected_coeffs[1][1] = -0.125;
+	expected_coeffs[1][2] =  0.375;
+	expected_coeffs[1][3] =  0;
 
 	dmc::cubic_spline_interpolator<real_type> interp(x.begin(),
 													 x.end(),
@@ -328,6 +385,17 @@ DCS_TEST_DEF( notaknot_cubic_spline_2 )
 													 y.end(),
 													 dmc::not_a_knot_spline_boundary_condition);
 
+	// Check spline coefficients
+	for (std::size_t k = 0; k < (n-1); ++k)
+	{
+		std::vector<real_type> coeffs = interp.coefficients(k);
+
+		for (std::size_t i = 0; i < 4; ++i)
+		{
+			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
+		}
+	}
 	// Check interpolation at nodes
 	for (std::size_t i = 0; i < n; ++i)
 	{
@@ -453,20 +521,20 @@ DCS_TEST_DEF( curvature_adjusted_cubic_spline_1 )
 	real_type ub(3.3);
 	std::vector< std::vector<real_type> > expected_coeffs(n-1);
 	expected_coeffs[0] = std::vector<real_type>(4);
-	expected_coeffs[0][0] =  0.0;
-	expected_coeffs[0][1] =  0.15;
-	expected_coeffs[0][2] = -0.15;
-	expected_coeffs[0][3] =  0.5;
+	expected_coeffs[0][0] = 0.0;
+	expected_coeffs[0][1] = 0.1;
+	expected_coeffs[0][2] = 0.0;
+	expected_coeffs[0][3] = 0.4;
 	expected_coeffs[1] = std::vector<real_type>(4);
 	expected_coeffs[1][0] =  0.5;
-	expected_coeffs[1][1] =  1.35;
-	expected_coeffs[1][2] =  1.35;
-	expected_coeffs[1][3] =  1.2;
+	expected_coeffs[1][1] =  1.3;
+	expected_coeffs[1][2] =  1.2;
+	expected_coeffs[1][3] = -1.0;
 	expected_coeffs[2] = std::vector<real_type>(4);
 	expected_coeffs[2][0] =  2.0;
-	expected_coeffs[2][1] =  0.45;
-	expected_coeffs[2][2] = -2.25;
-	expected_coeffs[2][3] =  1.3;
+	expected_coeffs[2][1] =  0.7;
+	expected_coeffs[2][2] = -1.8;
+	expected_coeffs[2][3] =  0.6;
 	real_type x_test(0.5);
 	real_type y_test(0.1);
 
@@ -545,9 +613,9 @@ int main()
 		DCS_TEST_DO( natural_cubic_spline_2 );
 		DCS_TEST_DO( notaknot_cubic_spline_1 );
 		DCS_TEST_DO( notaknot_cubic_spline_2 );
-		DCS_TEST_DO( parabolic_cubic_spline_1 );
-		DCS_TEST_DO( parabolic_cubic_spline_2 );
-		DCS_TEST_DO( curvature_adjusted_cubic_spline_1 );
-		DCS_TEST_DO( curvature_adjusted_cubic_spline_2 );
+//		DCS_TEST_DO( parabolic_cubic_spline_1 );
+//		DCS_TEST_DO( parabolic_cubic_spline_2 );
+//		DCS_TEST_DO( curvature_adjusted_cubic_spline_1 );
+//		DCS_TEST_DO( curvature_adjusted_cubic_spline_2 );
 	DCS_TEST_END();
 }
