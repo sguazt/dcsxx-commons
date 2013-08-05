@@ -124,7 +124,7 @@ void tridiagonal_solver_inplace(InIterT subdiag_first, InIterT subdiag_last, InI
 
 /*
 template <typename RealT, typename InIterT, typename OutIterT>
-void tridiagonal_solver_inplace_old(InIterT subdiag_first, InIterT subdiag_last, InIterT diag_first, InIterT supdiag_first, OutIterT x_first)
+void tridiagonal_solver_inplace(InIterT subdiag_first, InIterT subdiag_last, InIterT diag_first, InIterT supdiag_first, OutIterT x_first)
 {
     std::size_t in;
 
@@ -168,6 +168,47 @@ void tridiagonal_solver_inplace_old(InIterT subdiag_first, InIterT subdiag_last,
 	}
 }
 */
+
+/**
+ * Solve a symmetric tridiagonal linear system using LDL' factorization.
+ *
+ * Solve the linear system \f$Ax=b\f$ where \f$A\f$ is a symmetric tridiagonal
+ * positive definite matrix using the \f$LDL^T\f$ factorization.
+ * 
+ * \param diag_first On input, the iterator to the first element of the diagonal
+ *  of \f$A\f$.
+ *  On output, the iterator to the first element of the diagonal of the
+ *  (diagonal) matrix \f$D\f$ of the\f$LDL^T\f$ factorization.
+ * \param diag_last On input, the iterator to the last element of the diagonal
+ *  of \f$A\f$.
+ *  On output, the iterator to the last element of the diagonal of the
+ *  (diagonal)  matrix \f$D\f$ of the\f$LDL^T\f$ factorization.
+ * \param subdiag_first On input, the iterator to the first element of the
+ *  subdiagonal of \f$A\f$.
+ *  On output, the iterator to the first element of the subdiagonal of \f$L\f$
+ *  of the \f$LDL^T\f$ factorization.
+ * \param x_first On input, the iterator to the first element of \f$b\f$,
+ *  On output, the iterator to the first element of \f$x\f$ (i.e., the
+ *  solution to the system).
+ */
+template <typename RealT, typename VectorT>
+void tridiagonal_ldl_solver_inplace(VectorT& diag, VectorT& subdiag, VectorT& x, ::std::size_t n, ::std::size_t start = 0)
+{
+	for (::std::size_t i = start+1; i < n; ++i)
+	{
+		const RealT sdm1(subdiag[i-1]);
+		subdiag[i-1] = sdm1/diag[i-1];
+		diag[i] -= sdm1*subdiag[i-1];
+		x[i] -= subdiag[i-1]*x[i-1];
+	}
+
+	x[n-1] /= diag[n-1];
+	//NOTE: static_cast is needed to avoid possible bad behaviors (experienced with GCC 4.8)
+	for (::std::ptrdiff_t i = n-2; i >= static_cast< ::std::ptrdiff_t >(start); --i)
+	{
+		x[i] = x[i]/diag[i] - subdiag[i]*x[i+1];
+	}
+}
 
 }} // Namespace detail::<unnamed>
 
@@ -307,14 +348,26 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 					DCS_EXCEPTION_THROW( ::std::invalid_argument,
 										 "Spline coefficients are defined for k=0,...,N-2, where N is the number of nodes" ));
 
-		const real_type h(this->node(k+1)-this->node(k));
-		const real_type d((this->value(k+1)-this->value(k))/h);
+/*
+		const real_type h(this->hk(k));
+		const real_type d(this->dk(k));
 
 		::std::vector<real_type> coeffs(4);
 		coeffs[0] = this->value(k);
-		coeffs[1] = d-h*(2.0*m_[k]+m_[k+1])/6.0;
+		coeffs[1] = d - h*(2.0*m_[k]+m_[k+1])/6.0;
 		coeffs[2] = m_[k]/2.0;
 		coeffs[3] = (m_[k+1]-m_[k])/(6.0*h);
+*/
+		::std::vector<real_type> coeffs(4);
+		const real_type dy(this->value(k+1)-this->value(k));
+		const real_type dx(this->node(k+1)-this->node(k));
+		const real_type dxy(dy/dx);
+		const real_type a((dxy - m_[k])/dx);
+		const real_type b((m_[k+1] -dxy)/dx);
+		coeffs[0] = this->value(k);
+		coeffs[1] = m_[k];
+		coeffs[2] = 2.0*a - b;
+		coeffs[3] = (b - a)/dx;
 
 		return coeffs;
 	}
@@ -334,6 +387,21 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 		return bound_cond_;
 	}
 
+//	private: real_type hk(::std::size_t k) const
+//	{
+//		return this->node(k+1)-this->node(k);
+//	}
+//
+//	private: real_type dk(::std::size_t k) const
+//	{
+//		return (this->value(k+1)-this->value(k))/this->hk(k);
+//	}
+//
+//	private: real_type uk(::std::size_t k) const
+//	{
+//		return 6.0*(dk(k)-dk(k-1));
+//	}
+
 	private: void init()
 	{
 		// pre
@@ -342,7 +410,7 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 					DCS_EXCEPTION_THROW( ::std::invalid_argument,
 										 "Endpoints must be finite for the specified boundary conditions" ));
 
-		const ::std::size_t n(this->num_nodes()-1);
+		const ::std::size_t n(this->num_nodes());
 
 		// check nodes to ensure they are a strictly increasing sequence
 		for (::std::size_t i = 1; i < n; ++i)
@@ -387,7 +455,9 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 		 * This system can be efficiently solved in linear time with the Thomas algorithm
 		 */
 
-		//::std::vector<real_type> m_(n+1, 0);
+#if 0
+		const ::std::size_t n(this->num_nodes()-1);
+
 		::std::vector<real_type> H_supdiag(n-1, 0);
 		::std::vector<real_type> H_diag(n-1, 0);
 		::std::vector<real_type> H_subdiag(n-1, 0);
@@ -395,45 +465,44 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 		switch (bound_cond_)
 		{
 			case clamped_spline_boundary_condition:
-				H_diag[0] = 1.5*(this->node(1)-this->node(0))+2*(this->node(2)-this->node(1)); // \frac{3}{2}*h_0 + 2*h_1
-				H_supdiag[0] = this->node(2)-this->node(1); // h_1
-				m_[1] = 6.0*((this->value(2)-this->value(1))/(this->node(2)-this->node(1))-(this->value(1)-this->value(0))/(this->node(1)-this->node(0))) - 3.0*((this->value(1)-this->value(0))/(this->node(1)-this->node(0))-lb_); // u_1 - 3*(d_0-S'(x_0))
-				H_subdiag[n-2] = this->node(n-1)-this->node(n-2); // h_{n-2}
-				H_diag[n-2] = 2.0*(this->node(n-1)-this->node(n-2))+1.5*(this->node(n)-this->node(n-1)); // 2*h_{n-2} + \frac{3}{2}*h_{n-1}
-				m_[n-1] = 6.0*((this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1))-(this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2))) - 3.0*(ub_-(this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1))); // u_{n-1} - 3*(S'(x_{n-1}-d_{n-1})
+				H_diag[0] = 1.5*this->hk(0) + 2.0*this->hk(1); // \frac{3}{2}*h_0 + 2*h_1
+				H_supdiag[0] = this->hk(1); // h_1
+				m_[1] = this->uk(1) - 3.0*(this->dk(0)-lb_); // u_1 - 3*(d_0-S'(x_0))
+				H_subdiag[n-2] = this->hk(n-2); // h_{n-2}
+				H_diag[n-2] = 2.0*this->hk(n-2) + 1.5*this->hk(n-1); // 2*h_{n-2} + \frac{3}{2}*h_{n-1}
+				m_[n-1] = this->uk(n-1) - 3.0*(ub_-this->dk(n-1)); // u_{n-1} - 3*(S'(x_{n})-d_{n-1})
 				break;
 			case natural_spline_boundary_condition:
-				m_[0] = m_[n] = 0;
-				H_diag[0] = 2.0*(this->node(2)-this->node(0)); // 2*(h_0+h_1)
-				H_supdiag[0] = this->node(2)-this->node(1); // h_1
-				m_[1] = 6.0*((this->value(2)-this->value(1))/(this->node(2)-this->node(1))-(this->value(1)-this->value(0))/(this->node(1)-this->node(0))); // u_1
-				H_subdiag[n-2] = this->node(n-1)-this->node(n-2); // h_{n-2}
-				H_diag[n-2] = 2.0*(this->node(n)-this->node(n-2)); // 2*(h_{n-2}+h_{n-1})
-				m_[n-1] = 6.0*((this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1))-(this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2))); // u_{n-1}
+				H_diag[0] = 2.0*(this->hk(0)+this->hk(1)); // 2*(h_0+h_1)
+				H_supdiag[0] = this->hk(1); // h_1
+				m_[1] = this->uk(1); // u_1
+				H_subdiag[n-2] = this->hk(n-2); // h_{n-2}
+				H_diag[n-2] = 2.0*(this->hk(n-2)+this->hk(n-1)); // 2*(h_{n-2}+h_{n-1})
+				m_[n-1] = this->uk(n-1); // u_{n-1}
 				break;
 			case not_a_knot_spline_boundary_condition:
-				H_diag[0] = 3.0*(this->node(1)-this->node(0)) + 2.0*(this->node(2)-this->node(1)) + (this->node(1)-this->node(0))*(this->node(1)-this->node(0))/(this->node(2)-this->node(1)); // 3*h_0 + 2*h_1 + \frac{h_0^2}{h_1}
-				H_supdiag[0] = (this->node(2)-this->node(1)) - (this->node(1)-this->node(0))*(this->node(1)-this->node(0))/(this->node(2)-this->node(1)); // h_1 - \frac{h_0^2}{h_1}
-				m_[1] = 6.0*((this->value(2)-this->value(1))/(this->node(2)-this->node(1))-(this->value(1)-this->value(0))/(this->node(1)-this->node(0))); // u_1
-				H_subdiag[n-2] = (this->node(n-1)-this->node(n-2)) - (this->node(n)-this->node(n-1))*(this->node(n)-this->node(n-1))/(this->node(n-1)-this->node(n-2)); // h_{n-2} - \frac{h_{n-1}^2}{h_{n-2}}
-				H_diag[n-2] = 2.0*(this->node(n-1)-this->node(n-2)) + 3.0*(this->node(n)-this->node(n-1)) + (this->node(n)-this->node(n-1))*(this->node(n)-this->node(n-1))/(this->node(n-1)-this->node(n-2)); // 2*h_{n-2} + 3*h_{n-1} + \frac{h_{n-1}^2}{h_{n-2}}
-				m_[n-1] = 6.0*((this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1)) - (this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2))); // u_{n-1}
+				H_diag[0] = 3.0*this->hk(0) + 2.0*this->hk(1) + this->hk(0)*this->hk(0)/this->hk(1); // 3*h_0 + 2*h_1 + \frac{h_0^2}{h_1}
+				H_supdiag[0] = this->hk(1) - this->hk(0)*this->hk(0)/this->hk(1); // h_1 - \frac{h_0^2}{h_1}
+				m_[1] = this->uk(1); // u_1
+				H_subdiag[n-2] = this->hk(n-2) - this->hk(n-1)*this->hk(n-1)/this->hk(n-2); // h_{n-2} - \frac{h_{n-1}^2}{h_{n-2}}
+				H_diag[n-2] = 2.0*this->hk(n-2) + 3.0*this->hk(n-1) + this->hk(n-1)*this->hk(n-1)/this->hk(n-2); // 2*h_{n-2} + 3*h_{n-1} + \frac{h_{n-1}^2}{h_{n-2}}
+				m_[n-1] = this->uk(n-1); // u_{n-1}
 				break;
 			case parabolic_spline_boundary_condition:
-				H_diag[0] = 3.0*(this->node(1)-this->node(0)) + 2.0*(this->node(2)-this->node(1)); // 3*h_0 + 2*h_1
-				H_supdiag[0] = this->node(2)-this->node(1); // h_1
-				m_[1] = 6.0*((this->value(2)-this->value(1))/(this->node(2)-this->node(1))-(this->value(1)-this->value(0))/(this->node(1)-this->node(0))); // u_1
-				H_subdiag[n-2] = (this->node(n-1)-this->node(n-2)); // h_{n-2}
-				H_diag[n-2] = 2.0*(this->node(n-1)-this->node(n-2)) + 3.0*(this->node(n)-this->node(n-1)); // 2*h_{n-2} + 3*h_{n-1}
-				m_[n-1] = 6.0*((this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1)) - (this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2))); // u_{n-1}
+				H_diag[0] = 3.0*this->hk(0) + 2.0*this->hk(1); // 3*h_0 + 2*h_1
+				H_supdiag[0] = this->hk(1); // h_1
+				m_[1] = this->uk(1); // u_1
+				H_subdiag[n-2] = this->hk(n-2); // h_{n-2}
+				H_diag[n-2] = 2.0*this->hk(n-2) + 3.0*this->hk(n-1); // 2*h_{n-2} + 3*h_{n-1}
+				m_[n-1] = this->uk(n-1); // u_{n-1}
 				break;
 			case curvature_adjusted_spline_boundary_condition:
-				H_diag[0] = 2.0*(this->node(2)-this->node(0)); // 2*(h_0 + h_1)
-				H_supdiag[0] = this->node(2)-this->node(1); // h_1
-				m_[1] = 6.0*((this->value(2)-this->value(1))/(this->node(2)-this->node(1))-(this->value(1)-this->value(0))/(this->node(1)-this->node(0))) - (this->node(1)-this->node(0))*lb_; // u_1 - h_0*S''(x_0)
-				H_subdiag[n-2] = (this->node(n-1)-this->node(n-2)); // h_{n-2}
-				H_diag[n-2] = 2.0*(this->node(n)-this->node(n-2)); // 2*(h_{n-2} + h_{n-1})
-				m_[n-1] = 6.0*((this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1)) - (this->value(n-1)-this->value(n-2))/(this->node(n-1)-this->node(n-2))) - (this->node(n)-this->node(n-1))*ub_; // u_{n-1} - h_{n-1}*S''(x_n)
+				H_diag[0] = 2.0*(this->hk(0)+this->hk(1)); // 2*(h_0 + h_1)
+				H_supdiag[0] = this->hk(1); // h_1
+				m_[1] = this->uk(1) - this->hk(0)*lb_; // u_1 - h_0*S''(x_0)
+				H_subdiag[n-2] = this->hk(n-2); // h_{n-2}
+				H_diag[n-2] = 2.0*(this->hk(n-2)+this->hk(n-1)); // 2*(h_{n-2} + h_{n-1})
+				m_[n-1] = this->uk(n-1) - this->hk(n-1)*ub_; // u_{n-1} - h_{n-1}*S''(x_n)
 				break;
 		}
 //DCS_DEBUG_TRACE("1.Subdiagonal: " << dcs::debug::to_string(H_subdiag.begin(), H_subdiag.end()));
@@ -443,36 +512,36 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 
 		for (::std::size_t k = 1; k < (n-2); ++k)
 		{
-			H_subdiag[k] = this->node(k)-this->node(k-1); // h_{k-1}
-			H_diag[k] = 2.0*(this->node(k+1)-this->node(k-1)); // 2*(h_{k-1}+h_{k})
-			H_supdiag[k] = this->node(k+1)-this->node(k); // h_k
-			m_[k] = 6.0*((this->value(k+1)-this->value(k))/(this->node(k+1)-this->node(k))-(this->value(k)-this->value(k-1))/(this->node(k)-this->node(k-1))); // u_k
+			H_subdiag[k] = this->hk(k-1); // h_{k-1}
+			H_diag[k] = 2.0*(this->hk(k-1)+this->hk(k)); // 2*(h_{k-1}+h_{k})
+			H_supdiag[k] = this->hk(k); // h_k
+			m_[k+1] = this->uk(k); // u_k
 		}
 
-//DCS_DEBUG_TRACE("2.Subdiagonal: " << dcs::debug::to_string(H_subdiag.begin(), H_subdiag.end()));
-//DCS_DEBUG_TRACE("2.Diagonal: " << dcs::debug::to_string(H_diag.begin(), H_diag.end()));
-//DCS_DEBUG_TRACE("2.Supdiagonal: " << dcs::debug::to_string(H_supdiag.begin(), H_supdiag.end()));
-//DCS_DEBUG_TRACE("2.Coefficients: " << dcs::debug::to_string(m_.begin()+1, m_.end()-1));
+DCS_DEBUG_TRACE("2.Subdiagonal: " << dcs::debug::to_string(H_subdiag.begin(), H_subdiag.end()));
+DCS_DEBUG_TRACE("2.Diagonal: " << dcs::debug::to_string(H_diag.begin(), H_diag.end()));
+DCS_DEBUG_TRACE("2.Supdiagonal: " << dcs::debug::to_string(H_supdiag.begin(), H_supdiag.end()));
+DCS_DEBUG_TRACE("2.Coefficients: " << dcs::debug::to_string(m_.begin()+1, m_.end()-1));
 		detail::tridiagonal_solver_inplace<real_type>(H_subdiag.begin(),
 													  H_subdiag.end(),
 													  H_diag.begin(),
 													  H_supdiag.begin(),
 													  m_.begin()+1);
-//DCS_DEBUG_TRACE("3.Unknowns: " << dcs::debug::to_string(m_.begin(), m_.end()));
+DCS_DEBUG_TRACE("3.Unknowns: " << dcs::debug::to_string(m_.begin(), m_.end()));
 
 		// Compute m_0 and m_n
 		switch (bound_cond_)
 		{
 			case clamped_spline_boundary_condition:
-				m_[0] = (3.0/(this->node(1)-this->node(0)))*((this->value(1)-this->value(0))/(this->node(1)-this->node(0))-lb_)-m_[1]/2.0; // \frac{3}{h_0}(d_0-S'(x_0)) - \frac{m_1}{2}
-				m_[n] = (3.0/(this->node(n)-this->node(n-1)))*(ub_-(this->value(n)-this->value(n-1))/(this->node(n)-this->node(n-1))) - m_[n-1]/2.0; // \frac{3}{h_{n-1}}(S'(x_n)-d_{n-1}) - \frac{m_{n-1}}{2}
+				m_[0] = (3.0/this->hk(0))*(this->dk(0)-lb_) - m_[1]/2.0; // \frac{3}{h_0}(d_0-S'(x_0)) - \frac{m_1}{2}
+				m_[n] = (3.0/this->hk(n-1))*(ub_-this->dk(n-1)) - m_[n-1]/2.0; // \frac{3}{h_{n-1}}(S'(x_n)-d_{n-1}) - \frac{m_{n-1}}{2}
 				break;
 			case natural_spline_boundary_condition:
 				m_[0] = m_[n] = 0;
 				break;
 			case not_a_knot_spline_boundary_condition:
-				m_[0] = m_[1]-(this->node(1)-this->node(0))*(m_[2]-m_[1])/(this->node(2)-this->node(1)); // m_1 - \frac{h_0(m_2-m_1)}{h_1}
-				m_[n] = m_[n-1]+(this->node(n)-this->node(n-1))*(m_[n-1]-m_[n-2])/(this->node(n-1)-this->node(n-2)); // m_{n-1} + \frac{h_{n-1}(m_{n-1}-m_{n-2})}{h_{n-2}}
+				m_[0] = m_[1] - this->hk(0)*(m_[2]-m_[1])/this->hk(1); // m_1 - \frac{h_0(m_2-m_1)}{h_1}
+				m_[n] = m_[n-1] + this->hk(n-1)*(m_[n-1]-m_[n-2])/this->hk(n-2); // m_{n-1} + \frac{h_{n-1}(m_{n-1}-m_{n-2})}{h_{n-2}}
 				break;
 			case parabolic_spline_boundary_condition:
 				m_[0] = m_[1]; // m_1
@@ -484,6 +553,107 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 				break;
 		}
 //DCS_DEBUG_TRACE("4.Unknowns: " << dcs::debug::to_string(m_.begin(), m_.end()));
+#else // 0
+		if (n == 2)
+		{
+			if (bound_cond_ != clamped_spline_boundary_condition)
+			{
+				m_[0] = m_[1] = (this->value(1)-this->value(0))/(this->node(1)-this->node(0));
+				return;
+			}
+		}
+		else if (n == 3 && bound_cond_ == not_a_knot_spline_boundary_condition)
+		{
+			// Fast computation for not-a-knot spline when n==3
+			const real_type dx_l = this->node(1)-this->node(0);
+			const real_type dy_l = (this->value(1) - this->value(0))/dx_l;
+			const real_type dx_r = this->node(2) - this->node(1);
+			const real_type dy_r = (this->value(2) - this->value(1))/dx_r;
+			const real_type w_l = dx_r/(dx_l + dx_r);
+			const real_type w_r = 1 - w_l;
+			m_[0] = (1 + w_r)*dy_l - w_r*dy_r;
+			m_[1] = w_l*dy_l + w_r*dy_r;
+			m_[2] = (1 + w_l)*dy_r - w_l*dy_l;
+			return;
+		}
+
+		::std::vector<real_type> H_diag(n, 0);
+		::std::vector<real_type> H_subdiag(n-1, 0);
+		::std::vector<real_type> qdy(n-1, 0);
+
+		for (::std::size_t k = 0; k < (n-1); ++k)
+		{
+			H_subdiag[k] = 1.0/(this->node(k+1)-this->node(k));
+			qdy[k] = (this->value(k+1)-this->value(k))*H_subdiag[k]*H_subdiag[k];
+		}
+		// Compute the coefficients matrix and the RHS for rows 1:n-2 (independent by spline type)
+		for (::std::size_t k = 1; k < (n-1); ++k)
+		{
+			H_diag[k] = 2.0*(H_subdiag[k-1]+H_subdiag[k]);
+			m_[k] = 3.0*(qdy[k-1]+qdy[k]);
+		}
+
+		// Compute first and last equation (dependent by spline type)
+		::std::size_t loffs(0);
+		::std::size_t roffs(0);
+		switch (bound_cond_)
+		{
+			case clamped_spline_boundary_condition:
+				// m_[0] and m_[n-1] are already known
+				m_[0] = lb_;
+				m_[n-1] = ub_;
+				m_[1] = m_[1] - m_[0]*H_subdiag[0];
+				m_[n-2] = m_[n-2] - m_[n-1]*H_subdiag[n-2];
+				loffs = 1;
+				roffs = 1;
+				break;
+			case natural_spline_boundary_condition:
+				// S''(x_0) = 0
+				H_diag[0] = 2.0*H_subdiag[0];
+				m_[0] = 3.0*qdy[0];
+				// S''(x_{n-1}) = 0
+				H_diag[n-1] = 2.0*H_subdiag[n-2];
+				m_[n-1] = 3.0*qdy[n-2];
+				break;
+			case not_a_knot_spline_boundary_condition:
+				{
+					// S'''(x_1^-) = S'''(x_1^+)
+					real_type r(H_subdiag[1]/H_subdiag[0]);
+					real_type rp1sq((1+r)*(1+r));
+					H_diag[0] = H_subdiag[0]/(1+r);
+					m_[0] = ((3.0*r+2)*qdy[0]+r*qdy[1])/rp1sq;
+					// S'''(x_{n-2}^-) = S'''(x_{n-2}^+)
+					r = H_subdiag[n-3]/H_subdiag[n-2];
+					rp1sq = (1+r)*(1+r);
+					H_diag[n-1] = H_subdiag[n-2]/(1+r);
+					m_[n-1] = ((3.0*r+2)*qdy[n-2]+r*qdy[n-3])/rp1sq;
+				}
+				break;
+			case parabolic_spline_boundary_condition:
+				throw ::std::runtime_error("TODO");
+				//break;
+			case curvature_adjusted_spline_boundary_condition:
+				throw ::std::runtime_error("TODO");
+				//break;
+		}
+//DCS_DEBUG_TRACE("1.Subdiagonal: " << dcs::debug::to_string(H_subdiag.begin(), H_subdiag.end()));
+//DCS_DEBUG_TRACE("1.Diagonal: " << dcs::debug::to_string(H_diag.begin(), H_diag.end()));
+//DCS_DEBUG_TRACE("1.Supdiagonal: " << dcs::debug::to_string(H_supdiag.begin(), H_supdiag.end()));
+//DCS_DEBUG_TRACE("1.Coefficients: " << dcs::debug::to_string(m_.begin()+1, m_.end()-1));
+
+		// check: avoid uint underflow
+		DCS_DEBUG_ASSERT( n >= roffs );
+
+DCS_DEBUG_TRACE("2.Subdiagonal: " << dcs::debug::to_string(H_subdiag.begin()+loffs, H_subdiag.end()-roffs));
+DCS_DEBUG_TRACE("2.Diagonal: " << dcs::debug::to_string(H_diag.begin()+loffs, H_diag.end()-roffs));
+DCS_DEBUG_TRACE("2.Coefficients: " << dcs::debug::to_string(m_.begin()+loffs, m_.end()-roffs));
+		detail::tridiagonal_ldl_solver_inplace<real_type>(H_diag,
+														  H_subdiag,
+														  m_,
+														  n-roffs,
+														  loffs);
+DCS_DEBUG_TRACE("3.Unknowns: " << dcs::debug::to_string(m_.begin(), m_.end()));
+#endif //0
 	}
 
 	private: real_type do_interpolate(real_type x) const
