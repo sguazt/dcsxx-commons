@@ -34,6 +34,7 @@
 #define DCS_MATH_CURVEFIT_INTERPOLATION_CUBIC_SPLINE_HPP
 
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <dcs/debug.hpp>
@@ -175,21 +176,17 @@ void tridiagonal_solver_inplace(InIterT subdiag_first, InIterT subdiag_last, InI
  * Solve the linear system \f$Ax=b\f$ where \f$A\f$ is a symmetric tridiagonal
  * positive definite matrix using the \f$LDL^T\f$ factorization.
  * 
- * \param diag_first On input, the iterator to the first element of the diagonal
- *  of \f$A\f$.
- *  On output, the iterator to the first element of the diagonal of the
+ * \param diag On input, a vector representing the diagonal of \f$A\f$.
+ *  On output, a vector representing the diagonal of the
  *  (diagonal) matrix \f$D\f$ of the\f$LDL^T\f$ factorization.
- * \param diag_last On input, the iterator to the last element of the diagonal
- *  of \f$A\f$.
- *  On output, the iterator to the last element of the diagonal of the
- *  (diagonal)  matrix \f$D\f$ of the\f$LDL^T\f$ factorization.
- * \param subdiag_first On input, the iterator to the first element of the
- *  subdiagonal of \f$A\f$.
- *  On output, the iterator to the first element of the subdiagonal of \f$L\f$
+ * \param subdiag On input, a vector representing the subdiagonal of \f$A\f$.
+ *  On output, a vector representing the subdiagonal of \f$L\f$
  *  of the \f$LDL^T\f$ factorization.
- * \param x_first On input, the iterator to the first element of \f$b\f$,
- *  On output, the iterator to the first element of \f$x\f$ (i.e., the
+ * \param x On input, a vector representing the vector \f$b\f$.
+ *  On output, a vector representing the vector \f$x\f$ (i.e., the
  *  solution to the system).
+ * \param n The length of vector \f$x\f$.
+ * \param start The initial position from which start reading.
  */
 template <typename RealT, typename VectorT>
 void tridiagonal_ldl_solver_inplace(VectorT& diag, VectorT& subdiag, VectorT& x, ::std::size_t n, ::std::size_t start = 0)
@@ -210,6 +207,88 @@ void tridiagonal_ldl_solver_inplace(VectorT& diag, VectorT& subdiag, VectorT& x,
 	}
 }
 
+/**
+ * Solve a symmetric nearly tridiagonal linear system using LDL' factorization.
+ *
+ * Solve the linear system \f$Ax=b\f$ where \f$A\f$ is a symmetric nearly
+ * tridiagonal positive definite matrix using the \f$LDL^T\f$ factorization.
+ *  The matrix \f$A\f$ has the form:
+ *  \f{pmatrix}
+ *   x & x &   &   &   &   & x \\
+ *   x & x & x &   &   &   &   \\
+ *     & x & x & x &   &   &   \\
+ *     &   & x & x & x &   &   \\
+ *     &   &   & x & x & x &   \\
+ *     &   &   &   & x & x & x \\
+ *   x &   &   &   &   & x & x \\
+ *  \f}
+ *  and thus the matrix \f$L\f$ is like:
+ *  \f{pmatrix}
+ *   1 &   &   &   &   &   &   \\
+ *   x & 1 &   &   &   &   &   \\
+ *     & x & 1 &   &   &   &   \\
+ *     &   & x & 1 &   &   &   \\
+ *     &   &   & x & 1 &   &   \\
+ *     &   &   &   & x & 1 &   \\
+ *   x & x & x & x & x & x & 1 \\
+ *  \f}
+ *
+ * \param diag On input, a vector representing the diagonal of \f$A\f$.
+ *  On output, a vector representing the diagonal of the
+ *  (diagonal) matrix \f$D\f$ of the\f$LDL^T\f$ factorization.
+ * \param subdiag On input, a vector representing the subdiagonal of \f$A\f$.
+ *  On output, a vector representing the subdiagonal of \f$L\f$
+ *  of the \f$LDL^T\f$ factorization.
+ * \param x On input, a vector representing the vector \f$b\f$.
+ *  On output, a vector representing the vector \f$x\f$ (i.e., the
+ *  solution to the system).
+ * \param n The length of vector \f$x\f$.
+ * \param start The initial position from which start reading.
+ */
+template <typename RealT, typename VectorT>
+void cyclic_tridiagonal_ldl_solver_inplace(VectorT& diag, VectorT& subdiag, VectorT& lastrow, VectorT& x, ::std::size_t n, ::std::size_t start = 0)
+{
+	// Compute the LDL' factorization
+	for (::std::size_t i = start; i < (n-2); ++i)
+	{
+		const RealT sd(subdiag[i]);
+		const RealT lr(lastrow[i]);
+		subdiag[i] /= diag[i]; // elimination of coefficient L(i,i-1)
+		lastrow[i] /= diag[i]; // elimination of coefficient L(n,i-1)
+
+		diag[i+1] -= sd*subdiag[i]; // elimination on line i+1
+		lastrow[i+1] -= sd*lastrow[i]; // elimination on line n
+		diag[n-1] -= lr*lastrow[i]; // Ditto
+	}
+
+	const RealT lr(lastrow[n-2]);
+	lastrow[n-2] /= diag[n-2];
+	diag[n-1] -= lr*lastrow[n-2];
+
+	// Solve LDL'x=b
+	for (::std::size_t i = start+1; i < (n-1); ++i)
+	{
+		x[i] -= subdiag[i-1]*x[i-1];
+		//x[n-1] -= lastrow[i-1]*x[i-1];
+	}
+	for (::std::size_t i = start; i < (n-1); ++i)
+	{
+		x[n-1] -= lastrow[i]*x[i];
+	}
+
+	for (::std::size_t i = start; i < n; ++i)
+	{
+		x[i] /= diag[i];
+	}
+
+	x[n-2] -= lastrow[n-2]*x[n-1];
+	//NOTE: static_cast is needed to avoid possible bad behaviors (experienced with GCC 4.8)
+	for (::std::ptrdiff_t i = n-3; i >= static_cast< ::std::ptrdiff_t >(start); --i)
+	{
+		x[i] -= subdiag[i]*x[i+1] + lastrow[i]*x[n-1];
+	}
+}
+
 }} // Namespace detail::<unnamed>
 
 
@@ -219,6 +298,7 @@ enum spline_boundary_condition_category
 	natural_spline_boundary_condition, ///< Natural cubic spline boundary condition
 	not_a_knot_spline_boundary_condition, ///< Not-a-knot boundary condition
 	parabolic_spline_boundary_condition, ///< Parabolically terminated spline boundary condition
+	periodic_spline_boundary_condition, ///< Periodic cubic spline boundary condition
 	curvature_adjusted_spline_boundary_condition ///< Endpoint curvature-adjusted spline boundary condition
 };
 
@@ -404,11 +484,16 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 
 	private: void init()
 	{
-		// pre
+		// pre: check that bounds are present when they are needed
 		DCS_ASSERT( (bound_cond_ != clamped_spline_boundary_condition && bound_cond_ != curvature_adjusted_spline_boundary_condition)
 					|| (::std::isfinite(lb_) && ::std::isfinite(ub_)),
 					DCS_EXCEPTION_THROW( ::std::invalid_argument,
 										 "Endpoints must be finite for the specified boundary conditions" ));
+		// pre: check periodicity requirement
+		DCS_ASSERT( bound_cond_ != periodic_spline_boundary_condition
+					|| ::dcs::math::float_traits<real_type>::essentially_equal(this->value(0), this->value(this->num_nodes()-1)),
+					DCS_EXCEPTION_THROW( ::std::invalid_argument,
+										 "For periodic splines, the first y-value must be equal to the last one" ));
 
 		const ::std::size_t n(this->num_nodes());
 
@@ -579,6 +664,7 @@ DCS_DEBUG_TRACE("3.Unknowns: " << dcs::debug::to_string(m_.begin(), m_.end()));
 
 		::std::vector<real_type> H_diag(n, 0);
 		::std::vector<real_type> H_subdiag(n-1, 0);
+		::std::vector<real_type> H_lastrow; // Only used by periodic splines, so it is resized if necessary
 		::std::vector<real_type> qdy(n-1, 0);
 
 		for (::std::size_t k = 0; k < (n-1); ++k)
@@ -632,6 +718,15 @@ DCS_DEBUG_TRACE("3.Unknowns: " << dcs::debug::to_string(m_.begin(), m_.end()));
 			case parabolic_spline_boundary_condition:
 				throw ::std::runtime_error("TODO");
 				//break;
+			case periodic_spline_boundary_condition:
+				H_diag[0] = 2.0*(H_subdiag[0]+H_subdiag[n-2]);
+				m_[0] = 3.0*(qdy[0]+qdy[n-2]);
+				H_lastrow.resize(n-1);
+				H_lastrow[0] = H_subdiag[n-2];
+				::std::fill(H_lastrow.begin()+1, H_lastrow.end(), 0.0);
+				H_lastrow[n-3] = H_subdiag[n-3];
+				roffs = 1;
+				break;
 			case curvature_adjusted_spline_boundary_condition:
 				throw ::std::runtime_error("TODO");
 				//break;
@@ -647,11 +742,24 @@ DCS_DEBUG_TRACE("3.Unknowns: " << dcs::debug::to_string(m_.begin(), m_.end()));
 DCS_DEBUG_TRACE("2.Subdiagonal: " << dcs::debug::to_string(H_subdiag.begin()+loffs, H_subdiag.end()-roffs));
 DCS_DEBUG_TRACE("2.Diagonal: " << dcs::debug::to_string(H_diag.begin()+loffs, H_diag.end()-roffs));
 DCS_DEBUG_TRACE("2.Coefficients: " << dcs::debug::to_string(m_.begin()+loffs, m_.end()-roffs));
-		detail::tridiagonal_ldl_solver_inplace<real_type>(H_diag,
-														  H_subdiag,
-														  m_,
-														  n-roffs,
-														  loffs);
+		if (bound_cond_ != periodic_spline_boundary_condition)
+		{
+			detail::tridiagonal_ldl_solver_inplace<real_type>(H_diag,
+															  H_subdiag,
+															  m_,
+															  n-roffs,
+															  loffs);
+		}
+		else
+		{
+			detail::cyclic_tridiagonal_ldl_solver_inplace<real_type>(H_diag,
+																	 H_subdiag,
+																	 H_lastrow,
+																	 m_,
+																	 n-roffs,
+																	 loffs);
+			m_[n-1] = m_[0];
+		}
 DCS_DEBUG_TRACE("3.Unknowns: " << dcs::debug::to_string(m_.begin(), m_.end()));
 #endif //0
 	}

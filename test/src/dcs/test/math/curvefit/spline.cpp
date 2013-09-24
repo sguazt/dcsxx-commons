@@ -499,6 +499,71 @@ DCS_TEST_DEF( parabolic_cubic_spline_2 )
 	}
 }
 
+DCS_TEST_DEF( periodic_cubic_spline_1 )
+{
+	DCS_TEST_TRACE("Periodic cubic spline #1");
+
+	typedef double real_type;
+
+	const std::size_t n(4);
+
+	std::vector<real_type> x(n);
+	x[0] = 0;
+	x[1] = 1;
+	x[2] = 2;
+	x[3] = 3;
+	std::vector<real_type> y(n);
+	y[0] = 0.0;
+	y[1] = 0.5;
+	y[2] = 2.0;
+	y[3] = 0.0;
+	std::vector< std::vector<real_type> > expected_coeffs(n-1);
+	expected_coeffs[0] = std::vector<real_type>(4);
+	expected_coeffs[0][0] =  0.0;
+	expected_coeffs[0][1] = -1.5;
+	expected_coeffs[0][2] =  2.5;
+	expected_coeffs[0][3] = -0.5;
+	expected_coeffs[1] = std::vector<real_type>(4);
+	expected_coeffs[1][0] =  0.5;
+	expected_coeffs[1][1] =  2.0;
+	expected_coeffs[1][2] =  1.0;
+	expected_coeffs[1][3] = -1.5;
+	expected_coeffs[2] = std::vector<real_type>(4);
+	expected_coeffs[2][0] =  2.0;
+	expected_coeffs[2][1] = -0.5;
+	expected_coeffs[2][2] = -3.5;
+	expected_coeffs[2][3] =  2.0;
+	real_type x_test(0.5);
+	real_type y_test(0.03125);
+
+	dmc::cubic_spline_interpolator<real_type> interp(x.begin(),
+													 x.end(),
+													 y.begin(),
+													 y.end(),
+													 dmc::periodic_spline_boundary_condition);
+
+	// Check spline coefficients
+	for (std::size_t k = 0; k < (n-1); ++k)
+	{
+		std::vector<real_type> coeffs = interp.coefficients(k);
+
+		for (std::size_t i = 0; i < 4; ++i)
+		{
+			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
+		}
+	}
+	// Check interpolation at nodes
+	for (std::size_t i = 0; i < n; ++i)
+	{
+		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
+		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
+	}
+	// Check interpolation at a given point
+	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << interp(x_test) );
+	DCS_TEST_CHECK_CLOSE(interp(x_test), y_test, tol);
+}
+
 DCS_TEST_DEF( curvature_adjusted_cubic_spline_1 )
 {
 	DCS_TEST_TRACE("Curvature-adjusted cubic spline #1");
@@ -615,6 +680,7 @@ int main()
 		DCS_TEST_DO( notaknot_cubic_spline_2 );
 //		DCS_TEST_DO( parabolic_cubic_spline_1 );
 //		DCS_TEST_DO( parabolic_cubic_spline_2 );
+		DCS_TEST_DO( periodic_cubic_spline_1 );
 //		DCS_TEST_DO( curvature_adjusted_cubic_spline_1 );
 //		DCS_TEST_DO( curvature_adjusted_cubic_spline_2 );
 	DCS_TEST_END();
