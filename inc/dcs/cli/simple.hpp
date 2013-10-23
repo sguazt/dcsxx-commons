@@ -165,15 +165,18 @@ template <typename T, typename FwdIterT>
 	{
 		it = find_option(it, last, opt);
 
-		T value(default_value);
-
 		if (it != last && ++it != last)
 		{
 			::std::istringstream iss(*it);
+			T value;
 			iss >> value;
+			values.push_back(value);
 		}
+	}
 
-		values.push_back(value);
+	if (values.size() == 0)
+	{
+		values.push_back(default_value);
 	}
 
 	return values;
