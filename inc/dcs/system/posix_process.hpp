@@ -501,7 +501,7 @@ class posix_process: private ::boost::noncopyable
 			::std::ostringstream oss;
 			oss << "Call to execvp(3) failed for command '" << cmd_ << "': " << ::strerror(errno) << ::std::endl;
 			::std::size_t count(oss.str().size());
-			::write(STDERR_FILENO, oss.str().c_str(), count);
+			count = ::write(STDERR_FILENO, oss.str().c_str(), count);
 			::_exit(EXIT_FAILURE);
 		}
 
