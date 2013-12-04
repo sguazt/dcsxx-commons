@@ -37,24 +37,46 @@ inline void suppress_unused_variable_warning(T const&) {}
 }}} // Namespace dcs::macro::detail
 
 
-/// Expand the given argument.
+/// Expands the given argument.
 #define DCS_MACRO_EXPAND(x) x
 
 /// The character '#' (hash).
 #define DCS_MACRO_HASH_SYM #
 
-/// Prefix the given argument with the character '#' (hash).
+/// Prefixes the given argument with the character '#' (hash).
 #define DCS_MACRO_HASHIFY(x) DCS_MACRO_EXPAND(DCS_MACRO_HASH_SYM)x
 
-/// Concatenate the two specified arguments.
+/// Concatenates the two specified arguments.
 #define DCS_MACRO_JOIN(x,y) x##y
 
-/// Stringify (quote) the given argument.
+/// Stringifies (quote) the given argument.
 #define DCS_MACRO_QUOTE(x) #x
 
-/// Suppress the "unused variable" warning issued during compilation.
+/// Suppresses the "unused variable" warning issued during compilation.
 #define DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(x) \
 	::dcs::macro::detail::suppress_unused_variable_warning(x)
+
+/// Declares a function, a variable or a type declaration as deprecated. Add it at the end of the declaration you want to deprecate.
+#if defined(_WIN32) || defined(__HP_cc)
+# define DCS_MACRO_DECL_DEPRECATED __declspec(deprecated)
+#elif defined(__GNUC__) && defined(__linux__)
+# define DCS_MACRO_DECL_DEPRECATED __attribute__ ((deprecated))
+#elif defined(__SUNPRO_C)
+# define DCS_MACRO_DECL_DEPRECATED
+#else
+# define DCS_MACRO_DECL_DEPRECATED
+#endif
+
+/// Marks a function, a variable or a type declaration that should be exported from DLLs or binaries for runtime linking.
+#if defined(_WIN32) || defined(__HP_cc)
+# define DCS_MACRO_DECL_EXPORT __declspec(dllexport)
+#elif defined(__GNUC__) && defined(__linux__)
+# define DCS_MACRO_DECL_EXPORT __attribute__ ((visibility("default")))
+#elif defined(__SUNPRO_C)
+# define DCS_MACRO_DECL_EXPORT __global
+#else
+# define DCS_MACRO_DECL_EXPORT
+#endif
 
 
 #endif // DCS_MACRO_HPP
