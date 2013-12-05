@@ -29,12 +29,6 @@
 #define DCS_STRING_ALGORITHM_TO_UPPER_HPP
 
 
-#include <dcs/detail/config/boost.hpp>
-
-#if !DCS_DETAIL_CONFIG_BOOST_CHECK_VERSION(103200) // 1.32
-#	error "Required Boost libraries version >= 1.32."
-#endif
-
 #include <boost/algorithm/string/case_conv.hpp>
 
 
