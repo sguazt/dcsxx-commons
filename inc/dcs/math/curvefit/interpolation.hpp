@@ -35,8 +35,10 @@
 
 
 #include <dcs/math/curvefit/interpolation/base1d.hpp>
+#include <dcs/math/curvefit/interpolation/constant.hpp>
 #include <dcs/math/curvefit/interpolation/cubic_spline.hpp>
 #include <dcs/math/curvefit/interpolation/linear.hpp>
+#include <dcs/math/curvefit/interpolation/nearest.hpp>
 
 
 #endif // DCS_MATH_CURVEFIT_INTERPOLATION_HPP
