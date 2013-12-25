@@ -45,6 +45,21 @@ DCS_TEST_DEF( clamped_cubic_spline_1 )
 {
 	DCS_TEST_TRACE("Clamped cubic spline #1");
 
+	/*
+	 * To test with MATLAB/Octave
+	 * > x = [0 1 2 3]
+	 * > y = [0 0.5 2 1.5]
+	 * > cs = spline(x,[0.2 y -1])
+	 * > ppval(cs,0.5)
+	 *
+	 * To test with MATLAB curvefit toolbox or with Octave splines package
+	 * > pkg load splines  % Octave only
+	 * > x = [0 1 2 3]
+	 * > y = [0 0.5 2 1.5]
+	 * > cs = csape(x,y, 'complete', [0.2 -1])
+	 * > ppval(cs,0.5)
+	 */
+
 	typedef double real_type;
 
 	const std::size_t n(4);
@@ -63,17 +78,17 @@ DCS_TEST_DEF( clamped_cubic_spline_1 )
 	real_type ub(-1);
 	std::vector< std::vector<real_type> > expected_coeffs(n-1);
 	expected_coeffs[0] = std::vector<real_type>(4);
-	expected_coeffs[0][0] =  0;
-	expected_coeffs[0][1] =  0.2;
+	expected_coeffs[0][0] =  0.00;
+	expected_coeffs[0][1] =  0.20;
 	expected_coeffs[0][2] = -0.18;
 	expected_coeffs[0][3] =  0.48;
 	expected_coeffs[1] = std::vector<real_type>(4);
-	expected_coeffs[1][0] =  0.5;
+	expected_coeffs[1][0] =  0.50;
 	expected_coeffs[1][1] =  1.28;
 	expected_coeffs[1][2] =  1.26;
 	expected_coeffs[1][3] = -1.04;
 	expected_coeffs[2] = std::vector<real_type>(4);
-	expected_coeffs[2][0] =  2.0;
+	expected_coeffs[2][0] =  2.00;
 	expected_coeffs[2][1] =  0.68;
 	expected_coeffs[2][2] = -1.86;
 	expected_coeffs[2][3] =  0.68;
@@ -102,12 +117,15 @@ DCS_TEST_DEF( clamped_cubic_spline_1 )
 	// Check interpolation at nodes
 	for (std::size_t i = 0; i < n; ++i)
 	{
-		DCS_DEBUG_TRACE("Node x = " << x[i] << " ==> " << interp(x[i]) );
-		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
+		const real_type yy = interp(x[i]);
+
+		DCS_DEBUG_TRACE("Node x = " << x[i] << " ==> " << yy );
+		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << interp(x_test) );
-	DCS_TEST_CHECK_CLOSE(interp(x_test), y_test, tol);
+	const real_type yy_test = interp(x_test);
+	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
 DCS_TEST_DEF( clamped_cubic_spline_2 )
@@ -115,6 +133,21 @@ DCS_TEST_DEF( clamped_cubic_spline_2 )
 	DCS_TEST_TRACE("Clamped cubic spline #2");
 
 	typedef double real_type;
+
+	/*
+	 * To test with MATLAB/Octave
+	 * > x = [-1 0 3]
+	 * > y = [0.5 0 3]
+	 * > cs = spline(x,[0.2 y -1])
+	 * > ppval(cs,0.5)
+	 *
+	 * To test with MATLAB curvefit toolbox or with Octave splines package
+	 * > pkg load splines  % Octave only
+	 * > x = [-1 0 3]
+	 * > y = [0.5 0 3]
+	 * > cs = csape(x,y, 'complete', [0.2 -1])
+	 * > ppval(cs,0.5)
+	 */
 
 	const std::size_t n(3);
 
@@ -130,15 +163,17 @@ DCS_TEST_DEF( clamped_cubic_spline_2 )
 	real_type ub(-1);
 	std::vector< std::vector<real_type> > expected_coeffs(n-1);
 	expected_coeffs[0] = std::vector<real_type>(4);
-	expected_coeffs[0][0] =  0.5;
-	expected_coeffs[0][1] =  0.2;
+	expected_coeffs[0][0] =  0.5000;
+	expected_coeffs[0][1] =  0.2000;
 	expected_coeffs[0][2] = -1.7625;
 	expected_coeffs[0][3] =  1.0625;
 	expected_coeffs[1] = std::vector<real_type>(4);
-	expected_coeffs[1][0] =  0;
-	expected_coeffs[1][1] = -0.1375;
-	expected_coeffs[1][2] =  1.425;
-	expected_coeffs[1][3] = -0.348611111111111;
+	expected_coeffs[1][0] =  0.00000;
+	expected_coeffs[1][1] = -0.13750;
+	expected_coeffs[1][2] =  1.42500;
+	expected_coeffs[1][3] = -0.34861;
+	real_type x_test(0.5);
+	real_type y_test(0.24392361);
 
 	dmc::cubic_spline_interpolator<real_type> interp(x.begin(),
 													 x.end(),
@@ -162,14 +197,29 @@ DCS_TEST_DEF( clamped_cubic_spline_2 )
 	// Check interpolation at nodes
 	for (std::size_t i = 0; i < n; ++i)
 	{
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
-		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
+		const real_type yy = interp(x[i]);
+
+		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
+	// Check interpolation at a given point
+	const real_type yy_test = interp(x_test);
+	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
 DCS_TEST_DEF( natural_cubic_spline_1 )
 {
 	DCS_TEST_TRACE("Natural cubic spline #1");
+
+	/*
+	 * To test with MATLAB curvefit toolbox or with Octave splines package
+	 * > pkg load splines  % Octave only
+	 * > x = [0 1 2 3]
+	 * > y = [0 0.5 2 1.5]
+	 * > cs = csape(x,y, 'variational')
+	 * > ppval(cs,0.5)
+	 */
 
 	typedef double real_type;
 
@@ -187,15 +237,15 @@ DCS_TEST_DEF( natural_cubic_spline_1 )
 	y[3] = 1.5;
 	std::vector< std::vector<real_type> > expected_coeffs(n-1);
 	expected_coeffs[0] = std::vector<real_type>(4);
-	expected_coeffs[0][0] = 0;
+	expected_coeffs[0][0] = 0.0;
 	expected_coeffs[0][1] = 0.1;
-	expected_coeffs[0][2] = 0;
+	expected_coeffs[0][2] = 0.0;
 	expected_coeffs[0][3] = 0.4;
 	expected_coeffs[1] = std::vector<real_type>(4);
 	expected_coeffs[1][0] =  0.5;
 	expected_coeffs[1][1] =  1.3;
 	expected_coeffs[1][2] =  1.2;
-	expected_coeffs[1][3] = -1;
+	expected_coeffs[1][3] = -1.0;
 	expected_coeffs[2] = std::vector<real_type>(4);
 	expected_coeffs[2][0] =  2.0;
 	expected_coeffs[2][1] =  0.7;
@@ -225,17 +275,29 @@ DCS_TEST_DEF( natural_cubic_spline_1 )
 	// Check interpolation at nodes
 	for (std::size_t i = 0; i < n; ++i)
 	{
-		DCS_DEBUG_TRACE("Node x = " << x[i] << " ==> " << interp(x[i]) );
-		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
+		const real_type yy = interp(x[i]);
+
+		DCS_DEBUG_TRACE("Node x = " << x[i] << " ==> " << yy);
+		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << interp(x_test) );
-	DCS_TEST_CHECK_CLOSE(interp(x_test), y_test, tol);
+	const real_type yy_test = interp(x_test);
+	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
 DCS_TEST_DEF( natural_cubic_spline_2 )
 {
 	DCS_TEST_TRACE("Natural cubic spline #2");
+
+	/*
+	 * To test with MATLAB curvefit toolbox or with Octave splines package
+	 * > pkg load splines  % Octave only
+	 * > x = [-1 0 3]
+	 * > y = [0.5 0 3]
+	 * > cs = csape(x,y, 'variational')
+	 * > ppval(cs,0.5)
+	 */
 
 	typedef double real_type;
 
@@ -251,15 +313,18 @@ DCS_TEST_DEF( natural_cubic_spline_2 )
 	y[2] = 3;
 	std::vector< std::vector<real_type> > expected_coeffs(n-1);
 	expected_coeffs[0] = std::vector<real_type>(4);
-	expected_coeffs[0][0] =  0.5;
+	expected_coeffs[0][0] =  0.5000;
 	expected_coeffs[0][1] = -0.6875;
-	expected_coeffs[0][2] = -0;
+	expected_coeffs[0][2] = -0.0000;
 	expected_coeffs[0][3] =  0.1875;
 	expected_coeffs[1] = std::vector<real_type>(4);
-	expected_coeffs[1][0] =  0;
-	expected_coeffs[1][1] = -0.125;
+	expected_coeffs[1][0] =  0.0000;
+	expected_coeffs[1][1] = -0.1250;
 	expected_coeffs[1][2] =  0.5625;
 	expected_coeffs[1][3] = -0.0625;
+	real_type x_test(0.5);
+	real_type y_test(0.0703125);
+
 
 	dmc::cubic_spline_interpolator<real_type> interp(x.begin(),
 													 x.end(),
@@ -281,14 +346,35 @@ DCS_TEST_DEF( natural_cubic_spline_2 )
 	// Check interpolation at nodes
 	for (std::size_t i = 0; i < n; ++i)
 	{
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
-		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
+		const real_type yy = interp(x[i]);
+
+		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
+	// Check interpolation at a given point
+	const real_type yy_test = interp(x_test);
+	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
 DCS_TEST_DEF( notaknot_cubic_spline_1 )
 {
 	DCS_TEST_TRACE("Not-a-knot cubic spline #1");
+
+	/*
+	 * To test with MATLAB/Octave
+	 * > x = [0 1 2 3]
+	 * > y = [0 0.5 2 1.5]
+	 * > cs = spline(x,y])
+	 * > ppval(cs,0.5)
+	 *
+	 * To test with MATLAB curvefit toolbox or with Octave splines package
+	 * > pkg load splines  % Octave only
+	 * > x = [0 1 2 3]
+	 * > y = [0 0.5 2 1.5]
+	 * > cs = csape(x,y, 'not-a-knot')
+	 * > ppval(cs,0.5)
+	 */
 
 	typedef double real_type;
 
@@ -343,17 +429,35 @@ DCS_TEST_DEF( notaknot_cubic_spline_1 )
 	// Check interpolation at nodes
 	for (std::size_t i = 0; i < n; ++i)
 	{
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
-		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
+		const real_type yy = interp(x[i]);
+
+		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << interp(x_test) );
-	DCS_TEST_CHECK_CLOSE(interp(x_test), y_test, tol);
+	const real_type yy_test = interp(x_test);
+	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
 DCS_TEST_DEF( notaknot_cubic_spline_2 )
 {
 	DCS_TEST_TRACE("Not-a-knot cubic spline #2");
+
+	/*
+	 * To test with MATLAB/Octave
+	 * > x = [-1 0 3]
+	 * > y = [0.5 0 3]
+	 * > cs = spline(x,y])
+	 * > ppval(cs,0.5)
+	 *
+	 * To test with MATLAB curvefit toolbox or with Octave splines package
+	 * > pkg load splines  % Octave only
+	 * > x = [-1 0 3]
+	 * > y = [0.5 0 3]
+	 * > cs = csape(x,y, 'not-a-knot')
+	 * > ppval(cs,0.5)
+	 */
 
 	typedef double real_type;
 
@@ -370,14 +474,16 @@ DCS_TEST_DEF( notaknot_cubic_spline_2 )
 	std::vector< std::vector<real_type> > expected_coeffs(n-1);
 	expected_coeffs[0] = std::vector<real_type>(4);
 	expected_coeffs[0][0] =  0.5;
-	expected_coeffs[0][1] = -0.875;
-	expected_coeffs[0][2] =  0.375;
-	expected_coeffs[0][3] =  0;
+	expected_coeffs[0][1] = -0.69643;
+	expected_coeffs[0][2] =  0.21429;
+	expected_coeffs[0][3] = -0.01786;
 	expected_coeffs[1] = std::vector<real_type>(4);
 	expected_coeffs[1][0] =  0;
-	expected_coeffs[1][1] = -0.125;
-	expected_coeffs[1][2] =  0.375;
-	expected_coeffs[1][3] =  0;
+	expected_coeffs[1][1] =  0.67857;
+	expected_coeffs[1][2] =  0.16071;
+	expected_coeffs[1][3] = -0.01786;
+	real_type x_test(0.5);
+	real_type y_test(0.37723);
 
 	dmc::cubic_spline_interpolator<real_type> interp(x.begin(),
 													 x.end(),
@@ -399,11 +505,17 @@ DCS_TEST_DEF( notaknot_cubic_spline_2 )
 	// Check interpolation at nodes
 	for (std::size_t i = 0; i < n; ++i)
 	{
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
-		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
+		const real_type yy = interp(x[i]);
+
+		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
+	const real_type yy_test = interp(x_test);
+	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
+/*
 DCS_TEST_DEF( parabolic_cubic_spline_1 )
 {
 	DCS_TEST_TRACE("Parabolically terminated cubic spline #1");
@@ -498,10 +610,20 @@ DCS_TEST_DEF( parabolic_cubic_spline_2 )
 		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
 	}
 }
+*/
 
 DCS_TEST_DEF( periodic_cubic_spline_1 )
 {
 	DCS_TEST_TRACE("Periodic cubic spline #1");
+
+	/*
+	 * To test with MATLAB curvefit toolbox or with Octave splines package
+	 * > pkg load splines  % Octave only
+	 * > x = [0 1 2 3]
+	 * > y = [0 0.5 2 0]
+	 * > cs = csape(x,y, 'periodic')
+	 * > ppval(cs,0.5)
+	 */
 
 	typedef double real_type;
 
@@ -534,7 +656,7 @@ DCS_TEST_DEF( periodic_cubic_spline_1 )
 	expected_coeffs[2][2] = -3.5;
 	expected_coeffs[2][3] =  2.0;
 	real_type x_test(0.5);
-	real_type y_test(0.03125);
+	real_type y_test(-0.1875);
 
 	dmc::cubic_spline_interpolator<real_type> interp(x.begin(),
 													 x.end(),
@@ -556,14 +678,89 @@ DCS_TEST_DEF( periodic_cubic_spline_1 )
 	// Check interpolation at nodes
 	for (std::size_t i = 0; i < n; ++i)
 	{
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
-		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
+		const real_type yy = interp(x[i]);
+
+		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << interp(x_test) );
-	DCS_TEST_CHECK_CLOSE(interp(x_test), y_test, tol);
+	const real_type yy_test = interp(x_test);
+	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
+DCS_TEST_DEF( periodic_cubic_spline_2 )
+{
+	DCS_TEST_TRACE("Periodic cubic spline #2");
+
+	/*
+	 * To test with MATLAB curvefit toolbox or with Octave splines package
+	 * > pkg load splines  % Octave only
+	 * > x = [-1 0 3]
+	 * > y = [0.5 0 0.5]
+	 * > cs = csape(x,y, 'periodic')
+	 * > ppval(cs,0.5)
+	 */
+
+	typedef double real_type;
+
+	const std::size_t n(3);
+
+	std::vector<real_type> x(n);
+	x[0] = -1;
+	x[1] =  0;
+	x[2] =  3;
+	std::vector<real_type> y(n);
+	y[0] = 0.5;
+	y[1] = 0.0;
+	y[2] = 0.5;
+	std::vector< std::vector<real_type> > expected_coeffs(n-1);
+	expected_coeffs[0] = std::vector<real_type>(4);
+	expected_coeffs[0][0] =  0.50;
+	expected_coeffs[0][1] = -0.33;
+	expected_coeffs[0][2] = -0.50;
+	expected_coeffs[0][3] =  0.33;
+	expected_coeffs[1] = std::vector<real_type>(4);
+	expected_coeffs[1][0] =  0.00;
+	expected_coeffs[1][1] = -0.33;
+	expected_coeffs[1][2] =  0.50;
+	expected_coeffs[1][3] = -0.11;
+	real_type x_test(0.5);
+	//real_type y_test(0.03125);
+	real_type y_test(-0.055555555555556);
+
+	dmc::cubic_spline_interpolator<real_type> interp(x.begin(),
+													 x.end(),
+													 y.begin(),
+													 y.end(),
+													 dmc::periodic_spline_boundary_condition);
+
+	// Check spline coefficients
+//	for (std::size_t k = 0; k < (n-1); ++k)
+//	{
+//		std::vector<real_type> coeffs = interp.coefficients(k);
+//
+//		for (std::size_t i = 0; i < 4; ++i)
+//		{
+//			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+//			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
+//		}
+//	}
+	// Check interpolation at nodes
+	for (std::size_t i = 0; i < n; ++i)
+	{
+		const real_type yy = interp(x[i]);
+
+		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
+	}
+	// Check interpolation at a given point
+	const real_type yy_test = interp(x_test);
+	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
+}
+
+/*
 DCS_TEST_DEF( curvature_adjusted_cubic_spline_1 )
 {
 	DCS_TEST_TRACE("Curvature-adjusted cubic spline #1");
@@ -666,6 +863,7 @@ DCS_TEST_DEF( curvature_adjusted_cubic_spline_2 )
 		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
 	}
 }
+*/
 
 int main()
 {
@@ -678,10 +876,11 @@ int main()
 		DCS_TEST_DO( natural_cubic_spline_2 );
 		DCS_TEST_DO( notaknot_cubic_spline_1 );
 		DCS_TEST_DO( notaknot_cubic_spline_2 );
-//		DCS_TEST_DO( parabolic_cubic_spline_1 );
-//		DCS_TEST_DO( parabolic_cubic_spline_2 );
+////		DCS_TEST_DO( parabolic_cubic_spline_1 );
+////		DCS_TEST_DO( parabolic_cubic_spline_2 );
 		DCS_TEST_DO( periodic_cubic_spline_1 );
-//		DCS_TEST_DO( curvature_adjusted_cubic_spline_1 );
-//		DCS_TEST_DO( curvature_adjusted_cubic_spline_2 );
+		DCS_TEST_DO( periodic_cubic_spline_2 );
+////		DCS_TEST_DO( curvature_adjusted_cubic_spline_1 );
+////		DCS_TEST_DO( curvature_adjusted_cubic_spline_2 );
 	DCS_TEST_END();
 }
