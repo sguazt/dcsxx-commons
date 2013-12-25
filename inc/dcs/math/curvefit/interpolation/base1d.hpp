@@ -45,7 +45,7 @@
 #include <vector>
 
 
-#define DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD 1
+//#define DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD 1
 
 
 namespace dcs { namespace math { namespace curvefit {
@@ -72,7 +72,7 @@ class base_1d_interpolator
 		DCS_ASSERT(n_ >= 2,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
 									   "Invalid number of interpolating points"));
-		DCS_ASSERT(ord_ >= 1,
+		DCS_ASSERT(ord_ >= 0,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
 									   "Invalid interpolation order"));
 		DCS_ASSERT(m_ >= 2,
@@ -126,12 +126,18 @@ class base_1d_interpolator
 		return yy_[i];
 	}
 
+	// Find the position k of the interval [xx_k,xx_{k+1}] where the given x falls such that
+	//   'xx[k] <= x < xx[k+1],
+	// for all 'x' within the table.
+	// If 'x < xx[0]' then 'k' is 1.  If 'x >= xx[n-1]' then 'k' is 'n-1'
 	protected: ::std::size_t find(real_type x) const
 	{
 #ifdef DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
+		// Experimental
 		return cor_ ? hunt(x) : locate(x);
 #else // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
-		return sequential_find(x);
+		//return sequential_find(x);
+		return bisection_find(x);
 #endif // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 	}
 
@@ -251,6 +257,76 @@ class base_1d_interpolator
 			}
 		}
 		return n_-1;
+	}
+
+	/// Locate a given value by bisection
+	protected: ::std::size_t bisection_find(real_type x) const
+	{
+//		::std::size_t i(0);
+//		::std::size_t j(n_-1);
+//
+//		// Handle out-of-domain points
+//		if (::dcs::math::float_traits<real_type>::approximately_less_equal(x, xx_[i]))
+//		{
+//			return i;
+//		}
+//		if (::dcs::math::float_traits<real_type>::approximately_greater_equal(x, xx_[j]))
+//		{
+//			return j;
+//		}
+//
+//		// Find the correct interval
+//		while (i < (j-1)) // xx_[i] <= x <= xx_[j]
+//		{
+//			::std::size_t k((i+j)/2); // i+1 <= k <= j-1
+//			if (::dcs::math::float_traits<real_type>::definitely_less(x, xx_[k]))
+//			{
+//				j = k;
+//			}
+//			else
+//			{
+//				i = k;
+//			}
+//		}
+//
+//		if (::dcs::math::float_traits<real_type>::approximately_equal(x, xx_[i]))
+//		{
+//			return i;
+//		}
+//		//if (::dcs::math::float_traits<real_type>::approximately_equal(x, xx_[j]);
+//		//{
+//		//	return j;
+//		//}
+//
+//		return j;
+
+		// Handle out-of-domain points
+		if (::dcs::math::float_traits<real_type>::approximately_less_equal(x, xx_[0]))
+		{
+			return 0;
+		}
+		if (::dcs::math::float_traits<real_type>::approximately_greater_equal(x, xx_[n_-1]))
+		{
+			return n_-1;
+		}
+
+		::std::size_t lo(0);
+		::std::size_t hi(n_);
+
+		while (lo < (hi-1))
+		{
+			const ::std::size_t mid((hi+lo) >> 1);
+			if (::dcs::math::float_traits<real_type>::definitely_less(x, xx_[mid]))
+			{
+				hi = mid;
+			}
+			else
+			{
+				lo = mid;
+			}
+		}
+
+		return lo;
 	}
 
 #endif // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
