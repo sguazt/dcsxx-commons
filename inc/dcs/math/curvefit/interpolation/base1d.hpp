@@ -273,7 +273,7 @@ class base_1d_interpolator
 		}
 
 		::std::size_t lo(0);
-		::std::size_t hi(n_);
+		::std::size_t hi(n_-1);
 
 		while (lo < (hi-1))
 		{
