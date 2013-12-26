@@ -208,6 +208,100 @@ DCS_TEST_DEF( clamped_cubic_spline_2 )
 	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
+DCS_TEST_DEF( clamped_cubic_spline_3 )
+{
+	DCS_TEST_TRACE("Clamped cubic spline #3");
+
+	typedef double real_type;
+
+	/*
+	 * To test with MATLAB/Octave
+	 * > x = [-1 0 3 6 10]
+	 * > y = [0.5 0 3 4 -1]
+	 * > cs = spline(x,[0.2 y -1])
+	 * > ppval(cs,0.5)
+	 *
+	 * To test with MATLAB curvefit toolbox or with Octave splines package
+	 * > pkg load splines  % Octave only
+	 * > x = [-1 0 3 6 10]
+	 * > y = [0.5 0 3 4 -1]
+	 * > cs = csape(x,y, 'complete', [0.2 -1])
+	 * > ppval(cs,0.5)
+	 */
+
+	const std::size_t n(5);
+
+	std::vector<real_type> x(n);
+	x[0] = -1;
+	x[1] = 0;
+	x[2] = 3;
+	x[3] = 6;
+	x[4] = 10;
+	std::vector<real_type> y(n);
+	y[0] = 0.5;
+	y[1] = 0;
+	y[2] = 3;
+	y[3] = 4;
+	y[4] = -1;
+	real_type lb(0.2);
+	real_type ub(-2);
+	std::vector< std::vector<real_type> > expected_coeffs(n-1);
+	expected_coeffs[0] = std::vector<real_type>(4);
+	expected_coeffs[0][0] =  0.500000000000000;
+	expected_coeffs[0][1] =  0.199999999999999;
+	expected_coeffs[0][2] = -1.485945273631838;
+	expected_coeffs[0][3] =  0.785945273631840;
+	expected_coeffs[1] = std::vector<real_type>(4);
+	expected_coeffs[1][0] =  0.000000000000000;
+	expected_coeffs[1][1] = -0.414054726368159;
+	expected_coeffs[1][2] =  0.871890547263681;
+	expected_coeffs[1][3] = -0.133512990602543;
+	expected_coeffs[2] = std::vector<real_type>(4);
+	expected_coeffs[2][0] =  3.000000000000000;
+	expected_coeffs[2][1] =  1.212437810945274;
+	expected_coeffs[2][2] = -0.329726368159204;
+	expected_coeffs[2][3] =  0.012230514096186;
+	expected_coeffs[3] = std::vector<real_type>(4);
+	expected_coeffs[3][0] =  4.000000000000000;
+	expected_coeffs[3][1] = -0.435696517412935;
+	expected_coeffs[3][2] = -0.219651741293532;
+	expected_coeffs[3][3] =  0.004018967661692;
+	real_type x_test(0.5);
+	real_type y_test(-0.005743850193477);
+
+	dmc::cubic_spline_interpolator<real_type> interp(x.begin(),
+													 x.end(),
+													 y.begin(),
+													 y.end(),
+													 dmc::clamped_spline_boundary_condition,
+													 lb,
+													 ub);
+
+	// Check spline coefficients
+	for (std::size_t k = 0; k < (n-1); ++k)
+	{
+		std::vector<real_type> coeffs = interp.coefficients(k);
+
+		for (std::size_t i = 0; i < 4; ++i)
+		{
+			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
+		}
+	}
+	// Check interpolation at nodes
+	for (std::size_t i = 0; i < n; ++i)
+	{
+		const real_type yy = interp(x[i]);
+
+		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
+	}
+	// Check interpolation at a given point
+	const real_type yy_test = interp(x_test);
+	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
+}
+
 DCS_TEST_DEF( natural_cubic_spline_1 )
 {
 	DCS_TEST_TRACE("Natural cubic spline #1");
@@ -325,6 +419,90 @@ DCS_TEST_DEF( natural_cubic_spline_2 )
 	real_type x_test(0.5);
 	real_type y_test(0.0703125);
 
+
+	dmc::cubic_spline_interpolator<real_type> interp(x.begin(),
+													 x.end(),
+													 y.begin(),
+													 y.end(),
+													 dmc::natural_spline_boundary_condition);
+
+	// Check spline coefficients
+	for (std::size_t k = 0; k < (n-1); ++k)
+	{
+		std::vector<real_type> coeffs = interp.coefficients(k);
+
+		for (std::size_t i = 0; i < 4; ++i)
+		{
+			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
+		}
+	}
+	// Check interpolation at nodes
+	for (std::size_t i = 0; i < n; ++i)
+	{
+		const real_type yy = interp(x[i]);
+
+		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
+	}
+	// Check interpolation at a given point
+	const real_type yy_test = interp(x_test);
+	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
+}
+
+DCS_TEST_DEF( natural_cubic_spline_3 )
+{
+	DCS_TEST_TRACE("Natural cubic spline #3");
+
+	/*
+	 * To test with MATLAB curvefit toolbox or with Octave splines package
+	 * > pkg load splines  % Octave only
+	 * > x = [-1 0 3 6 10]
+	 * > y = [0.5 0 3 4 -1]
+	 * > cs = csape(x,y, 'variational')
+	 * > ppval(cs,0.5)
+	 */
+
+	typedef double real_type;
+
+	const std::size_t n(5);
+
+	std::vector<real_type> x(n);
+	x[0] = -1;
+	x[1] = 0;
+	x[2] = 3;
+	x[3] = 6;
+	x[4] = 10;
+	std::vector<real_type> y(n);
+	y[0] = 0.5;
+	y[1] = 0;
+	y[2] = 3;
+	y[3] = 4;
+	y[4] = -1;
+	std::vector< std::vector<real_type> > expected_coeffs(n-1);
+	expected_coeffs[0] = std::vector<real_type>(4);
+	expected_coeffs[0][0] =  0.500000000000000;
+	expected_coeffs[0][1] = -0.720113438045375;
+	expected_coeffs[0][2] = -0.000000000000000;
+	expected_coeffs[0][3] =  0.220113438045375;
+	expected_coeffs[1] = std::vector<real_type>(4);
+	expected_coeffs[1][0] =  0.000000000000000;
+	expected_coeffs[1][1] = -0.059773123909250;
+	expected_coeffs[1][2] =  0.660340314136126;
+	expected_coeffs[1][3] = -0.102360868722125;
+	expected_coeffs[2] = std::vector<real_type>(4);
+	expected_coeffs[2][0] =  3.000000000000000;
+	expected_coeffs[2][1] =  1.138525305410122;
+	expected_coeffs[2][2] = -0.260907504363002;
+	expected_coeffs[2][3] = -0.002496606554198;
+	expected_coeffs[3] = std::vector<real_type>(4);
+	expected_coeffs[3][0] =  4.000000000000000;
+	expected_coeffs[3][1] = -0.494328097731239;
+	expected_coeffs[3][2] = -0.283376963350785;
+	expected_coeffs[3][3] =  0.023614746945899;
+	real_type x_test(0.5);
+	real_type y_test(0.122403407989141);
 
 	dmc::cubic_spline_interpolator<real_type> interp(x.begin(),
 													 x.end(),
@@ -872,8 +1050,10 @@ int main()
 	DCS_TEST_BEGIN();
 		DCS_TEST_DO( clamped_cubic_spline_1 );
 		DCS_TEST_DO( clamped_cubic_spline_2 );
+		DCS_TEST_DO( clamped_cubic_spline_3 );
 		DCS_TEST_DO( natural_cubic_spline_1 );
 		DCS_TEST_DO( natural_cubic_spline_2 );
+		DCS_TEST_DO( natural_cubic_spline_3 );
 		DCS_TEST_DO( notaknot_cubic_spline_1 );
 		DCS_TEST_DO( notaknot_cubic_spline_2 );
 ////		DCS_TEST_DO( parabolic_cubic_spline_1 );
