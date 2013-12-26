@@ -137,13 +137,13 @@ class base_1d_interpolator
 		return cor_ ? hunt(x) : locate(x);
 #else // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 		//return sequential_find(x);
-		return bisection_find(x);
+		return bsearch_find(x);
 #endif // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 	}
 
 #ifdef DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 
-	/// Find the location of a given value using the bisection method.
+	/// Find the location of a given value using the binary search method.
 	protected: ::std::size_t locate(real_type x) const
 	{
 		bool ascnd(xx_[n_-1] >= xx_[0]);
@@ -259,47 +259,9 @@ class base_1d_interpolator
 		return n_-1;
 	}
 
-	/// Locate a given value by bisection
-	protected: ::std::size_t bisection_find(real_type x) const
+	/// Locate a given value by binary search
+	protected: ::std::size_t bsearch_find(real_type x) const
 	{
-//		::std::size_t i(0);
-//		::std::size_t j(n_-1);
-//
-//		// Handle out-of-domain points
-//		if (::dcs::math::float_traits<real_type>::approximately_less_equal(x, xx_[i]))
-//		{
-//			return i;
-//		}
-//		if (::dcs::math::float_traits<real_type>::approximately_greater_equal(x, xx_[j]))
-//		{
-//			return j;
-//		}
-//
-//		// Find the correct interval
-//		while (i < (j-1)) // xx_[i] <= x <= xx_[j]
-//		{
-//			::std::size_t k((i+j)/2); // i+1 <= k <= j-1
-//			if (::dcs::math::float_traits<real_type>::definitely_less(x, xx_[k]))
-//			{
-//				j = k;
-//			}
-//			else
-//			{
-//				i = k;
-//			}
-//		}
-//
-//		if (::dcs::math::float_traits<real_type>::approximately_equal(x, xx_[i]))
-//		{
-//			return i;
-//		}
-//		//if (::dcs::math::float_traits<real_type>::approximately_equal(x, xx_[j]);
-//		//{
-//		//	return j;
-//		//}
-//
-//		return j;
-
 		// Handle out-of-domain points
 		if (::dcs::math::float_traits<real_type>::approximately_less_equal(x, xx_[0]))
 		{
