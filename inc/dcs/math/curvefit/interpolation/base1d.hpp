@@ -259,7 +259,25 @@ class base_1d_interpolator
 		return n_-1;
 	}
 
-	/// Locate a given value by binary search
+	/**
+	 * Locate a given value by binary search
+	 *
+	 * The resulting index \c j is guaranteed to be strictly less than the max
+	 * number of nodes and greater than or equal to 0, so that the implicit bracket
+	 * <code>[j,j+1]</code> always corresponds to a region within the implicit value
+	 * range of the value array.
+	 *
+	 * Specifically, suppose the node array is
+	 * \f$k=\{k_0, k_1, \ldots, k_m\}\f$, the index returned by this
+	 * function is:
+	 * \f{equation}
+	 * \begin{cases}
+	 * 0, & x \le k_0,\\
+	 * j, & x > k_{j-1} && x \le k_j,\\
+	 * m-1, & x \ge k_m,\\
+	 * \end{cases}
+	 * \f}
+	 */
 	protected: ::std::size_t bsearch_find(real_type x) const
 	{
 		// Handle out-of-domain points
