@@ -34,9 +34,11 @@
 #define DCS_MATH_CURVEFIT_INTERPOLATION_LINEAR_HPP
 
 
+#include <dcs/assert.hpp>
+#include <dcs/exception.hpp>
 #include <dcs/math/curvefit/interpolation/base1d.hpp>
 #include <cstddef>
-//#include <dcs/algorithm/order.hpp>
+#include <stdexcept>
 
 
 namespace dcs { namespace math { namespace curvefit {
@@ -48,14 +50,14 @@ class linear_interpolator: public base_1d_interpolator<RealT>
 	private: typedef base_1d_interpolator<real_type> base_type;
 
 
-	public: linear_interpolator()
-	{
-	}
-
 	public: template <typename XIterT, typename YIterT>
 			linear_interpolator(XIterT first_x, XIterT last_x, YIterT first_y, YIterT last_y)
-	: base_type(first_x, last_x, first_y, last_y, 1, 2)
+	: base_type(first_x, last_x, first_y, last_y/*, 1*/)
 	{
+		// pre: n >= 2
+		DCS_ASSERT(this->num_nodes() > 1,
+				   DCS_EXCEPTION_THROW(::std::invalid_argument,
+									   "Insufficient number of nodes. Required at least 2 nodes"));
 	}
 
 	private: real_type do_interpolate(real_type x) const
