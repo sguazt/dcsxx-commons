@@ -178,10 +178,6 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 	private: typedef base_1d_interpolator<real_type> base_type;
 
 
-	public: cubic_spline_interpolator()
-	{
-	}
-
 	public: template <typename XIterT, typename YIterT>
 			cubic_spline_interpolator(XIterT first_x,
 									  XIterT last_x,
@@ -190,7 +186,7 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 									  spline_boundary_condition_category boundary_condition,
 									  real_type lb = -::std::numeric_limits<real_type>::infinity(),
 									  real_type ub = ::std::numeric_limits<real_type>::infinity())
-	: base_type(first_x, last_x, first_y, last_y, 3, 2),
+	: base_type(first_x, last_x, first_y, last_y),
 	  bound_cond_(boundary_condition),
 	  lb_(lb),
 	  ub_(ub),
@@ -202,7 +198,7 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 	public: ::std::vector<real_type> coefficients(::std::size_t k) const
 	{
 		// pre: k < n
-		DCS_ASSERT( k < this->num_nodes(),
+		DCS_ASSERT( k < this->num_nodes()-1,
 					DCS_EXCEPTION_THROW( ::std::invalid_argument,
 										 "Spline coefficients are defined for k=0,...,N-1, where N is the number of nodes" ));
 
@@ -235,6 +231,11 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 
 	private: void init()
 	{
+		// pre: n >= 2 for periodic splines AND n >= 3 for the other splines
+		DCS_ASSERT( (bound_cond_ != periodic_spline_boundary_condition && this->num_nodes() > 2)
+					|| this->num_nodes() > 1,
+					DCS_EXCEPTION_THROW( ::std::invalid_argument,
+										 "Insufficient number of nodes. Required at least 2 nodes for periodic splines and 3 nodes for the other splines"));
 		// pre: check that bounds are present when they are needed
 		DCS_ASSERT( (bound_cond_ != clamped_spline_boundary_condition /*&& bound_cond_ != curvature_adjusted_spline_boundary_condition*/)
 					|| (::std::isfinite(lb_) && ::std::isfinite(ub_)),
@@ -361,7 +362,6 @@ class cubic_spline_interpolator: public base_1d_interpolator<RealT>
 			const RealT h1 = this->node(2)-this->node(1);
 			const RealT h2 = this->node(3)-this->node(2);
 			const RealT d0 = (this->value(1)-this->value(0))/h0;
-			const RealT d1 = (this->value(2)-this->value(1))/h1;
 			const RealT u1 = this->value(2)-this->value(1);
 			const RealT u2 = this->value(3)-this->value(2);
 
