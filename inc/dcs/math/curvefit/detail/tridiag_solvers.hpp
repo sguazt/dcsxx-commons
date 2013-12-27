@@ -3,6 +3,17 @@
  *
  * \brief Solvers for tridiagonal and quasi-tridiagonal linear systems.
  *
+ * Most of the code comes from [1,2].
+ *
+ * References:
+ * -# W.H. Press, S.A Teukolsky, W.T. Vetterling and B.P Flannery,
+ *    "Numerical Recipies: The Art of Scientific Computing, 3rd Edition",
+ *    Cambridge University Press, 2007
+ * -# G. Engeln-Muellges and F. Uhlig,
+ *    "Numerical Algorithm with C",
+ *    Springer-Verlag, 1996
+ * .
+ *
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  *
  * <hr/>
@@ -99,23 +110,26 @@ bool is_zero(RealT v)
  * \param n The size of the system
  *
  * References:
- * -# Numerical Recipies in C++
+ * -# W.H. Press, S.A Teukolsky, W.T. Vetterling and B.P Flannery,
+ *    "Numerical Recipies: The Art of Scientific Computing, 3rd Edition",
+ *    Cambridge University Press, 2007
+ * .
  */
 template <typename RealT, typename VectorT>
 void tridiagonal_solver_inplace(VectorT const& subdiag, VectorT const& diag, VectorT const& superdiag, VectorT& x, ::std::size_t n)
 {
-	::std::vector<RealT> aux_vec(n);
-
 	if (is_zero(diag[0]))
 	{
 		DCS_EXCEPTION_THROW(::std::domain_error,
 							"Matrix must be positive definite");
 	}
 
+	::std::vector<RealT> aux_vec(n-1); // The vector of c'_i
+
 	aux_vec[0] = superdiag[0]/diag[0];
 	x[0] /= diag[0];
 
-	for (::std::size_t i = 1; i < n; ++i)
+	for (::std::size_t i = 1; i < (n-1); ++i)
 	{
 		if (is_zero(diag[i]))
 		{
@@ -123,12 +137,17 @@ void tridiagonal_solver_inplace(VectorT const& subdiag, VectorT const& diag, Vec
 								"Matrix must be positive definite");
 		}
 
-		const RealT m = 1.0/(diag[i] - subdiag[i]*aux_vec[i-1]);
+		const RealT m = 1.0/(diag[i] - subdiag[i-1]*aux_vec[i-1]);
 		aux_vec[i] = superdiag[i]*m;
-		x[i] = (x[i] - subdiag[i]*x[i-1])*m;
+		x[i] = (x[i] - subdiag[i-1]*x[i-1])*m;
 	}
 
-	for (::std::ptrdiff_t i = n-1; i >= 0; --i)
+	if (n > 1)
+	{
+		x[n-1] = (x[n-1] - subdiag[n-2]*x[n-2])/(diag[n-1] - subdiag[n-2]*aux_vec[n-2]);
+	}
+
+	for (::std::ptrdiff_t i = n-2; i >= 0; --i)
 	{
 		x[i] -= aux_vec[i]*x[i+1];
 	}
