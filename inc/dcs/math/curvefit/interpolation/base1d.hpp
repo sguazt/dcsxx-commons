@@ -45,9 +45,6 @@
 #include <vector>
 
 
-//#define DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD 1
-
-
 namespace dcs { namespace math { namespace curvefit {
 
 template <typename RealT>
@@ -56,44 +53,27 @@ class base_1d_interpolator
 	public: typedef RealT real_type;
 
 
+	public: base_1d_interpolator()
+	: xx_(),
+	  yy_(),
+	  n_(0)
+	{
+	}
+
 	public: template <typename XIterT, typename YIterT>
-			base_1d_interpolator(XIterT first_x, XIterT last_x, YIterT first_y, YIterT last_y, ::std::size_t order, ::std::size_t m)
+			base_1d_interpolator(XIterT first_x, XIterT last_x, YIterT first_y, YIterT last_y)
 	: xx_(first_x, last_x),
 	  yy_(first_y, last_y),
-	  n_(xx_.size()),
-	  ord_(order),
-	  m_(m)
-#ifdef DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
-	 ,jsav_(0),
-	  cor_(false),
-	  dj_(::std::max(::std::size_t(1), static_cast< ::std::size_t >(::std::pow(n_, 0.25))))
-#endif // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
+	  n_(xx_.size())
 	{
-		DCS_ASSERT(n_ >= 2,
+		DCS_ASSERT(n_ >= 1,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
 									   "Invalid number of interpolating points"));
-		DCS_ASSERT(ord_ >= 0,
-				   DCS_EXCEPTION_THROW(::std::invalid_argument,
-									   "Invalid interpolation order"));
-		DCS_ASSERT(m_ >= 2,
-				   DCS_EXCEPTION_THROW(::std::invalid_argument,
-									   "Invalid number of local points"));
-//		DCS_ASSERT(m_ >= ord_,
-//				   DCS_EXCEPTION_THROW(::std::invalid_argument,
-//									   "Interpolation order cannot be greater than the number of local points"));
-		DCS_ASSERT(m_ <= n_,
-				   DCS_EXCEPTION_THROW(::std::invalid_argument,
-									   "Number of local points cannot be greater than the number of interpolating points"));
 	}
 
 	public: real_type operator()(real_type x) const
 	{
 		return do_interpolate(x);
-	}
-
-	public: ::std::size_t order() const
-	{
-		return ord_;
 	}
 
 	public: ::std::size_t num_nodes() const
@@ -126,121 +106,25 @@ class base_1d_interpolator
 		return yy_[i];
 	}
 
-	// Find the position k of the interval [xx_k,xx_{k+1}] where the given x falls such that
-	//   'xx[k] <= x < xx[k+1],
-	// for all 'x' within the table.
-	// If 'x < xx[0]' then 'k' is 1.  If 'x >= xx[n-1]' then 'k' is 'n-1'
+	/**
+	 * Locates a given value inside the interpolation interval.
+	 *
+	 * Given a set of nodes \f$\{x_0,\ldots,x_{n-1}\}\f$ and a point \f$x\f$,
+	 * finds the position \f$0 \le k < n-1\f$ of the interval
+	 * \f$[x_0,x_{n-1}]\f$ where \f$x\f$ falls such that:
+	 * \f{equation}
+	 * \begin{cases}
+	 * 0, & x \le x_0,\\
+	 * k, & x_k \le x < x_{k+1},\\
+	 * n-2, & x \ge x_{n-1},\\
+	 * \end{cases}
+	 * \f}
+	 */
 	protected: ::std::size_t find(real_type x) const
 	{
-#ifdef DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
-		// Experimental
-		return cor_ ? hunt(x) : locate(x);
-#else // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 		//return sequential_find(x);
 		return bsearch_find(x);
-#endif // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 	}
-
-#ifdef DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
-
-	/// Find the location of a given value using the binary search method.
-	protected: ::std::size_t locate(real_type x) const
-	{
-		bool ascnd(xx_[n_-1] >= xx_[0]);
-		::std::size_t jl(0);
-		::std::size_t ju(n_-1);
-		while ((ju-jl) > 1)
-		{
-			//::std::size_t jm((ju+jl) >> 1);
-			long jm((ju+jl) >> 1);
-			if ((x >= xx_[jm]) == ascnd)
-			{
-				jl = jm;
-			}
-			else
-			{
-				ju = jm;
-			}
-		}
-		cor_ = ::std::abs(jl-jsav_) > dj_ ? false : true;
-		jsav_ = jl;
-		return ::std::max(::std::ptrdiff_t(0), ::std::min(static_cast< ::std::ptrdiff_t >(n_-m_), static_cast< ::std::ptrdiff_t >(jl-((m_-2) >> 1))));
-	}
-
-	/// Bracket a specified value inside an interval.
-	protected: ::std::size_t hunt(real_type x) const
-	{
-		bool ascnd(xx_[n_-1] >= xx_[0]);
-		::std::ptrdiff_t jl(jsav_);
-		::std::ptrdiff_t ju(0);
-		::std::size_t inc(1);
-
-		if (jl < 0 || jl > (n_-1))
-		{
-			jl = 0;
-			ju = n_-1;
-		}
-		else if ((x >= xx_[jl]) == ascnd)
-		{
-			while (true)
-			{
-				ju = jl + inc;
-				if (ju >= (n_-1))
-				{
-					ju = n_-1;
-					break;
-				}
-				else if ((x < xx_[ju]) == ascnd)
-				{
-					break;
-				}
-				else
-				{
-					jl = ju;
-					inc *= 2;
-				}
-			}
-		}
-		else
-		{
-			ju = jl;
-			while (true)
-			{
-				jl = jl - inc;
-				if (jl <= 0)
-				{
-					jl = 0;
-					break;
-				}
-				else if ((x >= xx_[jl]) == ascnd)
-				{
-					break;
-				}
-				else
-				{
-					ju = jl;
-					inc *= 2;
-				}
-			}
-		}
-		while ((ju-jl) > 1)
-		{
-			::std::size_t jm((ju+jl) >> 1);
-			if ((x >= xx_[jm]) == ascnd)
-			{
-				jl = jm;
-			}
-			else
-			{
-				ju = jm;
-			}
-		}
-		cor_ = ::std::abs(jl-jsav_) > dj_ ? false : true;
-		jsav_ = jl;
-		return ::std::max(::std::ptrdiff_t(0), ::std::min(static_cast< ::std::ptrdiff_t >(n_-m_), static_cast< ::std::ptrdiff_t >(jl-((m_-2) >> 1))));
-	}
-
-#else // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 
 	/// Locate a given value using a sequential search
 	protected: ::std::size_t sequential_find(real_type x) const
@@ -249,35 +133,19 @@ class base_1d_interpolator
 		{
 			return 0;
 		}
+
 		for (::std::size_t i = 1; i < n_; ++i)
 		{
-			if (::dcs::math::float_traits<real_type>::approximately_less_equal(x, xx_[i]))
+			if (::dcs::math::float_traits<real_type>::definitely_less(x, xx_[i]))
 			{
 				return i-1;
 			}
 		}
-		return n_-1;
+
+		return n_-2;
 	}
 
-	/**
-	 * Locate a given value by binary search
-	 *
-	 * The resulting index \c j is guaranteed to be strictly less than the max
-	 * number of nodes and greater than or equal to 0, so that the implicit bracket
-	 * <code>[j,j+1]</code> always corresponds to a region within the implicit value
-	 * range of the value array.
-	 *
-	 * Specifically, suppose the node array is
-	 * \f$k=\{k_0, k_1, \ldots, k_m\}\f$, the index returned by this
-	 * function is:
-	 * \f{equation}
-	 * \begin{cases}
-	 * 0, & x \le k_0,\\
-	 * j, & x > k_{j-1} && x \le k_j,\\
-	 * m-1, & x \ge k_m,\\
-	 * \end{cases}
-	 * \f}
-	 */
+	/// Locate a given value by binary search
 	protected: ::std::size_t bsearch_find(real_type x) const
 	{
 		// Handle out-of-domain points
@@ -287,7 +155,7 @@ class base_1d_interpolator
 		}
 		if (::dcs::math::float_traits<real_type>::approximately_greater_equal(x, xx_[n_-1]))
 		{
-			return n_-1;
+			return n_-2;
 		}
 
 		::std::size_t lo(0);
@@ -306,29 +174,18 @@ class base_1d_interpolator
 			}
 		}
 
+		//post: the returned index is >= 0 and < (n-1)
+		DCS_DEBUG_ASSERT( lo >= 0 && lo < (n_-1) );
+
 		return lo;
 	}
-
-#endif // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 
 	private: virtual real_type do_interpolate(real_type x) const = 0;
 
 
 	private: const ::std::vector<real_type> xx_; ///< Data points
 	private: const ::std::vector<real_type> yy_; ///< Data values
-//	private: const ::std::size_t n_; ///< The number of interpolating points
 	private: const long n_; ///< The number of interpolating points
-	private: const ::std::size_t ord_; ///< The order of interpolation
-//	private: const ::std::size_t m_; ///< The number of local points
-	private: const long m_; ///< The number of local points
-#ifdef DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
-//	private: mutable ::std::size_t jsav_;
-//	private: mutable ::std::size_t cor_;
-//	private: const ::std::size_t dj_;
-	private: mutable long jsav_;
-	private: mutable bool cor_;
-	private: const long dj_;
-#endif // DCS_MATH_CURVEFIT_INTERPOLATION_USE_CORRELATION_DRIVEN_SEARCH_METHOD
 }; // base_1d_interpolator
 
 }}} // Namespace dcs::math::curvefit
