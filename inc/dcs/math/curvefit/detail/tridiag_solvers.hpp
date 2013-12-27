@@ -248,9 +248,6 @@ void tridiagonal_solver_inplace(VectorT const& subdiag, VectorT const& diag, Vec
 template <typename RealT, typename VectorT>
 void symmetric_tridiagonal_solver_inplace(VectorT& diag, VectorT& offdiag, VectorT& x, ::std::size_t n)
 {
-DCS_DEBUG_TRACE("diag: " << dcs::debug::to_string(diag.begin(), diag.begin()+n));//XXX
-DCS_DEBUG_TRACE("offdiag: " << dcs::debug::to_string(offdiag.begin(), offdiag.begin()+n));//XXX
-DCS_DEBUG_TRACE("coefficients: " << dcs::debug::to_string(x.begin(), x.begin()+n));//XXX
 	::std::vector<RealT> L_subdiag(n);
 	::std::vector<RealT> D_diag(n);
 
@@ -419,9 +416,6 @@ void cyclic_tridiagonal_solver_inplace(VectorT& diag, VectorT& subdiag, VectorT&
 template <typename RealT, typename VectorT>
 void symmetric_cyclic_tridiagonal_solver_inplace(VectorT& diag, VectorT& offdiag, VectorT& x, ::std::size_t n)
 {
-DCS_DEBUG_TRACE("diag: " << dcs::debug::to_string(diag.begin(), diag.begin()+n));//XXX
-DCS_DEBUG_TRACE("offdiag: " << dcs::debug::to_string(offdiag.begin(), offdiag.begin()+n));//XXX
-DCS_DEBUG_TRACE("coefficients: " << dcs::debug::to_string(x.begin(), x.begin()+n));//XXX
 #if 0
 	// Compute the LDL' factorization
 
