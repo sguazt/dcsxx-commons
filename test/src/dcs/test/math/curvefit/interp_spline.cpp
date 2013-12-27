@@ -110,7 +110,7 @@ DCS_TEST_DEF( clamped_cubic_spline_1 )
 
 		for (std::size_t i = 0; i < 4; ++i)
 		{
-			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
 			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
 		}
 	}
@@ -119,12 +119,12 @@ DCS_TEST_DEF( clamped_cubic_spline_1 )
 	{
 		const real_type yy = interp(x[i]);
 
-		DCS_DEBUG_TRACE("Node x = " << x[i] << " ==> " << yy );
+		DCS_TEST_TRACE("Node x = " << x[i] << " ==> " << yy );
 		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
 	const real_type yy_test = interp(x_test);
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_TRACE("Test x = " << x_test << " ==> " << yy_test);
 	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
@@ -190,7 +190,7 @@ DCS_TEST_DEF( clamped_cubic_spline_2 )
 
 		for (std::size_t i = 0; i < 4; ++i)
 		{
-			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
 			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
 		}
 	}
@@ -199,12 +199,12 @@ DCS_TEST_DEF( clamped_cubic_spline_2 )
 	{
 		const real_type yy = interp(x[i]);
 
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_TRACE("x = " << x[i] << " ==> " << yy);
 		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
 	const real_type yy_test = interp(x_test);
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_TRACE("Test x = " << x_test << " ==> " << yy_test);
 	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
@@ -284,7 +284,7 @@ DCS_TEST_DEF( clamped_cubic_spline_3 )
 
 		for (std::size_t i = 0; i < 4; ++i)
 		{
-			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
 			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
 		}
 	}
@@ -293,12 +293,12 @@ DCS_TEST_DEF( clamped_cubic_spline_3 )
 	{
 		const real_type yy = interp(x[i]);
 
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_TRACE("x = " << x[i] << " ==> " << yy);
 		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
 	const real_type yy_test = interp(x_test);
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_TRACE("Test x = " << x_test << " ==> " << yy_test);
 	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
@@ -362,7 +362,7 @@ DCS_TEST_DEF( natural_cubic_spline_1 )
 
 		for (std::size_t i = 0; i < 4; ++i)
 		{
-			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
 			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
 		}
 	}
@@ -371,12 +371,12 @@ DCS_TEST_DEF( natural_cubic_spline_1 )
 	{
 		const real_type yy = interp(x[i]);
 
-		DCS_DEBUG_TRACE("Node x = " << x[i] << " ==> " << yy);
+		DCS_TEST_TRACE("Node x = " << x[i] << " ==> " << yy);
 		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
 	const real_type yy_test = interp(x_test);
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_TRACE("Test x = " << x_test << " ==> " << yy_test);
 	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
@@ -433,7 +433,7 @@ DCS_TEST_DEF( natural_cubic_spline_2 )
 
 		for (std::size_t i = 0; i < 4; ++i)
 		{
-			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
 			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
 		}
 	}
@@ -442,12 +442,12 @@ DCS_TEST_DEF( natural_cubic_spline_2 )
 	{
 		const real_type yy = interp(x[i]);
 
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_TRACE("x = " << x[i] << " ==> " << yy);
 		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
 	const real_type yy_test = interp(x_test);
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_TRACE("Test x = " << x_test << " ==> " << yy_test);
 	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
@@ -517,7 +517,7 @@ DCS_TEST_DEF( natural_cubic_spline_3 )
 
 		for (std::size_t i = 0; i < 4; ++i)
 		{
-			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
 			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
 		}
 	}
@@ -526,12 +526,12 @@ DCS_TEST_DEF( natural_cubic_spline_3 )
 	{
 		const real_type yy = interp(x[i]);
 
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_TRACE("x = " << x[i] << " ==> " << yy);
 		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
 	const real_type yy_test = interp(x_test);
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_TRACE("Test x = " << x_test << " ==> " << yy_test);
 	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
@@ -600,7 +600,7 @@ DCS_TEST_DEF( notaknot_cubic_spline_1 )
 
 		for (std::size_t i = 0; i < 4; ++i)
 		{
-			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
 			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
 		}
 	}
@@ -609,12 +609,12 @@ DCS_TEST_DEF( notaknot_cubic_spline_1 )
 	{
 		const real_type yy = interp(x[i]);
 
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_TRACE("x = " << x[i] << " ==> " << yy);
 		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
 	const real_type yy_test = interp(x_test);
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_TRACE("Test x = " << x_test << " ==> " << yy_test);
 	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
@@ -676,7 +676,7 @@ DCS_TEST_DEF( notaknot_cubic_spline_2 )
 
 		for (std::size_t i = 0; i < 4; ++i)
 		{
-			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
 			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
 		}
 	}
@@ -685,11 +685,11 @@ DCS_TEST_DEF( notaknot_cubic_spline_2 )
 	{
 		const real_type yy = interp(x[i]);
 
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_TRACE("x = " << x[i] << " ==> " << yy);
 		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	const real_type yy_test = interp(x_test);
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_TRACE("Test x = " << x_test << " ==> " << yy_test);
 	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
@@ -744,18 +744,18 @@ DCS_TEST_DEF( parabolic_cubic_spline_1 )
 
 		for (std::size_t i = 0; i < 4; ++i)
 		{
-			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
 			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
 		}
 	}
 	// Check interpolation at nodes
 	for (std::size_t i = 0; i < n; ++i)
 	{
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
+		DCS_TEST_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
 		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
 	}
 	// Check interpolation at a given point
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << interp(x_test) );
+	DCS_TEST_TRACE("Test x = " << x_test << " ==> " << interp(x_test) );
 	DCS_TEST_CHECK_CLOSE(interp(x_test), y_test, tol);
 }
 
@@ -784,7 +784,7 @@ DCS_TEST_DEF( parabolic_cubic_spline_2 )
 
 	for (std::size_t i = 0; i < n; ++i)
 	{
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
+		DCS_TEST_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
 		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
 	}
 }
@@ -849,7 +849,7 @@ DCS_TEST_DEF( periodic_cubic_spline_1 )
 
 		for (std::size_t i = 0; i < 4; ++i)
 		{
-			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
 			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
 		}
 	}
@@ -858,12 +858,12 @@ DCS_TEST_DEF( periodic_cubic_spline_1 )
 	{
 		const real_type yy = interp(x[i]);
 
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_TRACE("x = " << x[i] << " ==> " << yy);
 		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
 	const real_type yy_test = interp(x_test);
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_TRACE("Test x = " << x_test << " ==> " << yy_test);
 	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
@@ -920,7 +920,7 @@ DCS_TEST_DEF( periodic_cubic_spline_2 )
 //
 //		for (std::size_t i = 0; i < 4; ++i)
 //		{
-//			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+//			DCS_TEST_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
 //			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
 //		}
 //	}
@@ -929,12 +929,12 @@ DCS_TEST_DEF( periodic_cubic_spline_2 )
 	{
 		const real_type yy = interp(x[i]);
 
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << yy);
+		DCS_TEST_TRACE("x = " << x[i] << " ==> " << yy);
 		DCS_TEST_CHECK_CLOSE(yy, y[i], tol);
 	}
 	// Check interpolation at a given point
 	const real_type yy_test = interp(x_test);
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << yy_test);
+	DCS_TEST_TRACE("Test x = " << x_test << " ==> " << yy_test);
 	DCS_TEST_CHECK_CLOSE(yy_test, y_test, tol);
 }
 
@@ -993,18 +993,18 @@ DCS_TEST_DEF( curvature_adjusted_cubic_spline_1 )
 
 		for (std::size_t i = 0; i < 4; ++i)
 		{
-			DCS_DEBUG_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
+			DCS_TEST_TRACE("k = " << k << ", i = " << i << " ==> s_{" << k << "," << i << "} = " << coeffs[i]);
 			DCS_TEST_CHECK_CLOSE(coeffs[i], expected_coeffs[k][i], tol);
 		}
 	}
 	// Check interpolation at nodes
 	for (std::size_t i = 0; i < n; ++i)
 	{
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
+		DCS_TEST_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
 		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
 	}
 	// Check interpolation at a given point
-	DCS_DEBUG_TRACE("Test x = " << x_test << " ==> " << interp(x_test) );
+	DCS_TEST_TRACE("Test x = " << x_test << " ==> " << interp(x_test) );
 	DCS_TEST_CHECK_CLOSE(interp(x_test), y_test, tol);
 }
 
@@ -1037,7 +1037,7 @@ DCS_TEST_DEF( curvature_adjusted_cubic_spline_2 )
 
 	for (std::size_t i = 0; i < n; ++i)
 	{
-		DCS_DEBUG_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
+		DCS_TEST_TRACE("x = " << x[i] << " ==> " << interp(x[i]) );
 		DCS_TEST_CHECK_CLOSE(interp(x[i]), y[i], tol);
 	}
 }
@@ -1045,7 +1045,7 @@ DCS_TEST_DEF( curvature_adjusted_cubic_spline_2 )
 
 int main()
 {
-	DCS_TEST_SUITE("Spline interpolation");
+	DCS_TEST_SUITE("Spline Interpolation");
 
 	DCS_TEST_BEGIN();
 		DCS_TEST_DO( clamped_cubic_spline_1 );
