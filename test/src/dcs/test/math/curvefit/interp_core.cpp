@@ -49,7 +49,7 @@ class fake_interpolator: public dmc::base_1d_interpolator<double>
 
 	public: template <typename XIterT, typename YIterT>
 			fake_interpolator(XIterT x_first, XIterT x_last, YIterT y_first, YIterT y_last)
-	: base_type(x_first, x_last, y_first, y_last, 0, 2)
+	: base_type(x_first, x_last, y_first, y_last)
 	{	
 	}
 
@@ -75,16 +75,18 @@ DCS_TEST_DEF( find_1 )
 
 	typedef double real_type;
 
-	const std::size_t n(3);
+	const std::size_t n(4);
 
 	std::vector<real_type> x(n);
 	x[0] = 1;
 	x[1] = 2;
 	x[2] = 3;
+	x[3] = 4;
 	std::vector<real_type> y(n);
 	y[0] = 2;
 	y[1] = 3;
 	y[2] = 4;
+	y[3] = 5;
 
 	detail::fake_interpolator interp(x.begin(),
 									 x.end(),
@@ -97,7 +99,7 @@ DCS_TEST_DEF( find_1 )
 		const std::size_t j = interp.find(x[i]);
 
 		DCS_TEST_TRACE("x = " << x[i] << " ==> " << j);
-		DCS_TEST_CHECK_EQUAL(i, j);
+		DCS_TEST_CHECK_EQUAL(j, i < (n-1) ? i : (n-2));
 	}
 
 	DCS_TEST_TRACE("Check inner points...");
@@ -108,18 +110,18 @@ DCS_TEST_DEF( find_1 )
 		const std::size_t j = interp.find(xx);
 
 		DCS_TEST_TRACE("x = " << xx << " ==> " << j);
-		DCS_TEST_CHECK_EQUAL(i, j);
+		DCS_TEST_CHECK_EQUAL(j, i < (n-1) ? i : (n-2));
 	}
 
 	DCS_TEST_TRACE("Check outer points...");
 	double xx1(x[0]-0.5);
 	std::size_t j1 = interp.find(xx1);
 	DCS_TEST_TRACE("x = " << xx1 << " ==> " << j1);
-	DCS_TEST_CHECK_EQUAL(0, j1);
+	DCS_TEST_CHECK_EQUAL(j1, 0);
 	double xx2(x[n-1]+0.5);
 	std::size_t j2 = interp.find(xx2);
 	DCS_TEST_TRACE("x = " << xx2 << " ==> " << j2);
-	DCS_TEST_CHECK_EQUAL(n-1, j2);
+	DCS_TEST_CHECK_EQUAL(j2, n-2);
 }
 
 int main()
