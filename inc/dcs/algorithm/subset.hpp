@@ -51,9 +51,12 @@ template <typename ValueT>
 struct subset_traits
 {
 	typedef ValueT value_type;
-	typedef ::std::vector<value_type> subset_container;
-	typedef typename subset_container::iterator subset_container_iterator;
-	typedef typename subset_container::const_iterator subset_container_const_iterator;
+	typedef ::std::vector<value_type> subset_container;///< DEPRECATED
+	typedef typename subset_container::iterator subset_container_iterator;///< DEPRECATED
+	typedef typename subset_container::const_iterator subset_container_const_iterator;///< DEPRECATED
+	typedef ::std::vector<value_type> element_container;
+	typedef typename element_container::iterator element_iterator;
+	typedef typename element_container::const_iterator element_const_iterator;
 };
 
 
@@ -139,15 +142,29 @@ class lexicographic_subset
 		return has_prev_;
 	}
 
+	public: typename ::std::vector<size_type> operator()() const
+	{
+		::std::vector<size_type> subset;
+
+		for (size_type pos = bits_.find_first();
+			 pos != impl_type::npos;
+			 pos = bits_.find_next(pos))
+		{
+			subset.push_back(pos);
+		}
+
+		return subset;
+	}
+
 	//public: template <typename ElemT, typename IterT>
 	public: template <typename ElemT>
-			typename subset_traits<ElemT>::subset_container operator()(::std::vector<ElemT> const& v) const
+			typename subset_traits<ElemT>::element_container operator()(::std::vector<ElemT> const& v) const
 	{
 		DCS_ASSERT(v.size() == n_,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
 									   "Size does not match"));
 
-		typename subset_traits<ElemT>::subset_container subset;
+		typename subset_traits<ElemT>::element_container subset;
 
 		for (size_type pos = bits_.find_first();
 			 pos != impl_type::npos;
@@ -160,7 +177,7 @@ class lexicographic_subset
 	}
 
 	public: template <typename IterT>
-			typename subset_traits< typename ::std::iterator_traits<IterT>::value_type >::subset_container operator()(IterT first, IterT last) const
+			typename subset_traits< typename ::std::iterator_traits<IterT>::value_type >::element_container operator()(IterT first, IterT last) const
 	{
 			return this->operator()(::std::vector<typename ::std::iterator_traits<IterT>::value_type>(first, last));
 	}
@@ -325,6 +342,314 @@ class lexicographic_subset
 }; // lexicographic_subset
 
 
+/*TODO
+class lexicographic_k_subset
+{
+	public: class const_iterator;
+
+
+	friend class const_iterator;
+
+
+	private: typedef lexicographic_k_subset self_type;
+	private: typedef ::boost::dynamic_bitset<> impl_type;
+	private: typedef typename impl_type::size_type size_type;
+	private: typedef unsigned long word_type;
+
+
+	public: explicit lexicographic_k_subset(::std::size_t n, ::std::size_t k)
+	: n_(n),
+	  k_(k),
+	  bits_(n, 0),
+	  has_prev_(true),
+	  has_next_(true)
+	{
+		DCS_ASSERT(n_ > 0,
+				   DCS_EXCEPTION_THROW(::std::invalid_argument,
+									   "Number of elements must be positive"));
+		DCS_ASSERT(n_ >= k,
+				   DCS_EXCEPTION_THROW(::std::invalid_argument,
+									   "Size of subset must be non negative"));
+	}
+
+	public: ::std::size_t max_size() const
+	{
+		return k_;
+	}
+
+	public: ::std::size_t size() const
+	{
+		return bits_.count();
+	}
+
+	public: self_type& operator++()
+	{
+		DCS_ASSERT(has_next_,
+				   DCS_EXCEPTION_THROW(::std::overflow_error,
+									   "No following subsets"));
+
+		if (k_ > 0)
+		{
+			unsigned long min(0);
+			unsigned long max(~0);
+			for (::std::size_t i = 0; i < k_; ++i)
+			{
+				min <<= 1;
+				min += 1;
+				max >>= 1;
+			}
+			max ^= 1;
+
+			do
+			{
+				has_next_ = bits_.to_ulong() < max;
+
+				if (has_next_)
+				{
+					bits_ = impl_type(n_, bits_.to_ulong()+1);
+				}
+			}
+			while (bits_.count() != k_);
+
+			has_prev_ = bits_.to_ulong() > min;
+		}
+
+		return *this;
+	}
+
+	public: bool has_next() const
+	{
+		return has_next_;
+	}
+
+	public: self_type& operator--()
+	{
+		DCS_ASSERT(has_prev_,
+				   DCS_EXCEPTION_THROW(::std::underflow_error,
+									   "No preceding subsets"));
+
+		if (k_ > 0)
+		{
+			unsigned long min(0);
+			unsigned long max(~0);
+			for (::std::size_t i = 0; i < k_; ++i)
+			{
+				min <<= 1;
+				min += 1;
+				max >>= 1;
+			}
+			max ^= 1;
+
+			do
+			{
+				has_prev_ = bits_.to_ulong() > min;
+
+				if (has_prev_)
+				{
+					bits_ = impl_type(n_, bits_.to_ulong()-1);
+				}
+			}
+			while (bits_.count() != k_);
+
+			has_next_ = bits_.to_ulong() < min;
+		}
+
+		return *this;
+	}
+
+	public: bool has_prev() const
+	{
+		return has_prev_;
+	}
+
+	//public: template <typename ElemT, typename IterT>
+	public: template <typename ElemT>
+			typename subset_traits<ElemT>::element_container operator()(::std::vector<ElemT> const& v) const
+	{
+		DCS_ASSERT(v.size() == n_,
+				   DCS_EXCEPTION_THROW(::std::invalid_argument,
+									   "Size does not match"));
+
+		typename subset_traits<ElemT>::element_container subset;
+
+		for (size_type pos = bits_.find_first();
+			 pos != impl_type::npos;
+			 pos = bits_.find_next(pos))
+		{
+			subset.push_back(v[pos]);
+		}
+
+		return subset;
+	}
+
+	public: template <typename IterT>
+			typename subset_traits< typename ::std::iterator_traits<IterT>::value_type >::element_container operator()(IterT first, IterT last) const
+	{
+			return this->operator()(::std::vector<typename ::std::iterator_traits<IterT>::value_type>(first, last));
+	}
+
+	public: const_iterator begin() const
+	{
+		return const_iterator(this, bits_.any() ? bits_.find_first() : impl_type::npos);
+	}
+
+	public: const_iterator end() const
+	{
+		return const_iterator(this, impl_type::npos);
+	}
+
+
+	public: class const_iterator: public ::std::iterator< ::std::bidirectional_iterator_tag,
+														 typename lexicographic_k_subset::impl_type::size_type const>
+	{
+		private: typedef ::std::iterator< ::std::bidirectional_iterator_tag,
+										  typename lexicographic_k_subset::impl_type::size_type const> base_type;
+		private: typedef lexicographic_k_subset container_type;
+		private: typedef typename container_type::impl_type bitset_type;
+		private: typedef typename container_type::size_type size_type;
+		public: typedef typename base_type::value_type value_type;
+		public: typedef typename base_type::difference_type difference_type;
+		public: typedef typename base_type::pointer pointer;
+		public: typedef typename base_type::reference reference;
+		public: typedef typename base_type::iterator_category iterator_category;
+
+
+		public: const_iterator(container_type const* p_subset, size_type pos)
+		: p_sub_(p_subset),
+		  pos_(pos)
+		{
+		}
+
+		public: reference operator*() const
+		{
+			return pos_;
+		}
+
+		public: pointer operator->() const
+		{
+			return &(operator*());
+		}
+
+		public: const_iterator& operator++()
+		{
+			pos_ = p_sub_->bits_.find_next(pos_);
+
+			return *this;
+		}
+
+		public: const_iterator operator++(int)
+		{
+			const_iterator tmp = *this;
+
+			operator++();
+
+			return tmp;
+		}
+
+		public: const_iterator& operator--()
+		{
+			size_type pos = bitset_type::npos;
+			for (size_type pos2 = p_sub_->bits_.find_first();
+				 pos2 != pos_;
+				 pos2 = p_sub_->bits_.find_next(pos2))
+			{
+				pos = pos2;
+			}
+
+			pos_ = pos;
+
+			return *this;
+		}
+
+		public: const_iterator operator--(int)
+		{
+			const_iterator tmp = *this;
+
+			operator--();
+
+			return tmp;
+		}
+
+		public: const_iterator operator+(difference_type n) const
+		{
+			const_iterator it = *this;
+
+			if (n > 0)
+			{
+				while (n--)
+				{
+					++it;
+				}
+			}
+			else
+			{
+				while (n++)
+				{
+					--it;
+				}
+			}
+
+			return it;
+		}
+
+		public: const_iterator operator-(difference_type n) const
+		{
+			return operator+(-n);
+		}
+
+		public: const_iterator& operator+=(difference_type n)
+		{
+			if (n > 0)
+			{
+				while (n--)
+				{
+					operator++();
+				}
+			}
+			else
+			{
+				while (n++)
+				{
+					operator--();
+				}
+			}
+
+			return *this;
+		}
+
+		public: const_iterator& operator-=(difference_type n)
+		{
+			return operator+=(-n);
+		}
+
+		friend
+		bool operator==(const_iterator const& lhs, const_iterator const& rhs)
+		{
+			return lhs.p_sub_ == rhs.p_sub_ && lhs.pos_ == rhs.pos_;
+		}
+
+		friend
+		bool operator!=(const_iterator const& lhs, const_iterator const& rhs)
+		{
+			return !(lhs == rhs);
+		}
+
+
+		private: container_type const* p_sub_;
+		private: size_type pos_;
+	}; // const_iterator
+
+
+	private: ::std::size_t n_; ///< The number of elements of the set
+	private: ::std::size_t k_; ///< The max number of elements of the subset
+	private: bool empty_set_; ///< Flag to enable or disable the inclusion of the empty set
+	private: impl_type bits_; ///< The subset implementation
+	private: bool has_prev_;
+	private: bool has_next_;
+}; // lexicographic_k_subset
+*/
+
+
 template <typename CharT, typename CharTraitsT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os,
 													lexicographic_subset const& subset)
@@ -348,17 +673,42 @@ template <typename CharT, typename CharTraitsT>
 	return os;
 }
 
+/*
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os,
+													lexicographic_k_subset const& subset)
+{
+	os << '(';
+
+	if (subset.size() > 0)
+	{
+		if (subset.size() > 1)
+		{
+			::std::copy(subset.begin(),
+						subset.end()-1,
+						::std::ostream_iterator< ::std::size_t >(os, " "));
+		}
+
+		os << *(subset.end()-1);
+	}
+
+	os << ')';
+
+	return os;
+}
+*/
+
 template <typename BidiIterT, typename SubsetT>
 inline
-typename subset_traits< typename ::std::iterator_traits<BidiIterT>::value_type >::subset_container
+typename subset_traits< typename ::std::iterator_traits<BidiIterT>::value_type >::element_container
 next_subset(BidiIterT first,
 			BidiIterT last,
 			SubsetT& subset)
 {
 	typedef typename ::std::iterator_traits<BidiIterT>::value_type value_type;
-	typedef typename subset_traits<value_type>::subset_container subset_container;
+	typedef typename subset_traits<value_type>::element_container element_container;
 
-	subset_container subs = subset(first, last);
+	element_container subs = subset(first, last);
 
 	++subset;
 
@@ -367,15 +717,15 @@ next_subset(BidiIterT first,
 
 template <typename BidiIterT, typename SubsetT>
 inline
-typename subset_traits< typename ::std::iterator_traits<BidiIterT>::value_type >::subset_container
+typename subset_traits< typename ::std::iterator_traits<BidiIterT>::value_type >::element_container
 prev_subset(BidiIterT first,
 			BidiIterT last,
 			SubsetT& subset)
 {
 	typedef typename ::std::iterator_traits<BidiIterT>::value_type value_type;
-	typedef typename subset_traits<value_type>::subset_container subset_container;
+	typedef typename subset_traits<value_type>::element_container element_container;
 
-	subset_container subs = subset(first, last);
+	element_container subs = subset(first, last);
 
 	--subset;
 
