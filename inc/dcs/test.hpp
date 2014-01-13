@@ -81,6 +81,22 @@
 
 namespace dcs { namespace test { namespace detail { namespace /*<unnamed>*/ {
 
+/// Check if the given real number is 0.
+template <typename T>
+inline
+bool iszero(T x)
+{
+	return ::std::fpclassify(x) == FP_ZERO;
+}
+
+/// Check if the given complex number is 0.
+template <typename T>
+inline
+bool iszero(::std::complex<T> const& z)
+{
+	return iszero(z.real()) && iszero(z.imag());
+}
+
 /// Check if the given complex number is a NaN.
 template <typename T>
 inline
@@ -138,6 +154,10 @@ bool rel_close_to(T1 x, T2 y, T3 tol)
 	if (::std::isnan(x) || ::std::isnan(y))
 	{ // According to IEEE, NaN is different even by itself
 		return false;
+	}
+	if (iszero(x) && iszero(y))
+	{
+		return true;
 	}
 	return ::std::abs(x-y)/::std::abs(y) <= tol;
 }
