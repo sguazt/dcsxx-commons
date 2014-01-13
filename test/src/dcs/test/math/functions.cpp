@@ -1,6 +1,5 @@
-
 /**
- * \file dcs/test/math/functions.hpp
+ * \file test/src/dcs/test/math/functions.hpp
  *
  * \brief Test suite for mathematical functions.
  *
@@ -8,32 +7,35 @@
  *
  * <hr/>
  *
- * Copyright (C) 2012       Marco Guazzone
+ * Copyright (C) 2012-2014  Marco Guazzone
  *                          [Distributed Computing System (DCS) Group,
  *                           Computer Science Institute,
  *                           Department of Science and Technological Innovation,
  *                           University of Piemonte Orientale,
  *                           Alessandria (Italy)]
  *
- * This file is part of dcsxx-commons.
+ * This file is part of dcsxx-commons (below referred to as "this program").
  *
- * dcsxx-commons is free software: you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
  * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * dcsxx-commons is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with dcsxx-commons. If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <dcs/math/function/bell.hpp>
 #include <dcs/math/function/clamp.hpp>
 #include <dcs/test.hpp>
 
+
+static const double tol = 1e-10;
 
 namespace detail { namespace /*<unnamed>*/ {
 
@@ -150,11 +152,47 @@ DCS_TEST_DEF( clamp )
 	DCS_TEST_CHECK( dcs::math::clamped(dcs::math::clamp(ddata.val_outrange_hi, double(0), double(1)), double(0), double(1)) );
 }
 
+DCS_TEST_DEF( bell )
+{
+	DCS_TEST_CASE( "bell" );
+
+	// See: http://oeis.org/A000110
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(0), 1.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(1), 1.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(2), 2.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(3), 5.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(4), 15.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(5), 52.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(6), 203.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(7), 877.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(8), 4140.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(9), 21147.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(10), 115975.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(11), 678570.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(12), 4213597.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(13), 27644437.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(14), 190899322.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(15), 1382958545.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(16), 10480142147.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(17), 82864869804.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(18), 682076806159.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(19), 5832742205057.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(20), 51724158235372.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(21), 474869816156751.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(22), 4506715738447323.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(23), 44152005855084346.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(24), 445958869294805289.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(25), 4638590332229999353.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(26), 49631246523618756274.0, tol );
+}
+
+
 int main()
 {
 	DCS_TEST_SUITE( "Math Functions" );
 
 	DCS_TEST_BEGIN();
 		DCS_TEST_DO( clamp );
+		DCS_TEST_DO( bell );
 	DCS_TEST_END();
 }
