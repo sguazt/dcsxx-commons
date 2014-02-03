@@ -442,6 +442,42 @@ DCS_TEST_DEF( test_prev_subset_without_empty )
 	}
 }
 
+DCS_TEST_DEF( test_k_subset_class )
+{
+	DCS_TEST_TRACE( "Test case: k-Subset Class" );
+
+	typedef char value_type;
+
+	const ::std::size_t sz(4);
+	const ::std::size_t k(2);
+
+	::std::vector<value_type> v(sz);
+	for (::std::size_t i = 0; i < sz; ++i)
+	{
+		v[i] = 'a' + i;
+	}
+
+	dcs::algorithm::lexicographic_k_subset subset(sz, k);
+
+	DCS_TEST_TRACE( "Test case: k-Subset - Class - increment" );
+
+	while (subset.has_next())
+	{
+		DCS_DEBUG_TRACE( "Subset: " << subset << " [size=" << subset.size() << "]" );
+
+		++subset;
+	}
+
+	DCS_TEST_TRACE( "Test case: k-Subset - Class - decrement" );
+
+	while (subset.has_prev())
+	{
+		DCS_DEBUG_TRACE( "Subset: " << subset << " [size=" << subset.size() << "]" );
+
+		--subset;
+	}
+}
+
 
 int main()
 {
@@ -460,5 +496,6 @@ int main()
 		DCS_TEST_DO(test_subset_class_without_empty);
 		DCS_TEST_DO(test_next_subset_without_empty);
 		DCS_TEST_DO(test_prev_subset_without_empty);
+		DCS_TEST_DO(test_k_subset_class);
 	DCS_TEST_END();
 }

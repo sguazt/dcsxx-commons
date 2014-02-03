@@ -7,7 +7,7 @@
  *
  * <hr/>
  *
- * Copyright (C) 2013       Marco Guazzone
+ * Copyright (C) 2013-2014  Marco Guazzone
  *                          [Distributed Computing System (DCS) Group,
  *                           Computer Science Institute,
  *                           Department of Science and Technological Innovation,
@@ -47,6 +47,13 @@
 
 namespace dcs { namespace algorithm {
 
+/**
+ * \brief Traits class for subset types
+ *
+ * \tparam ValueT The value type
+ *
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
+ */
 template <typename ValueT>
 struct subset_traits
 {
@@ -57,9 +64,39 @@ struct subset_traits
 	typedef ::std::vector<value_type> element_container;
 	typedef typename element_container::iterator element_iterator;
 	typedef typename element_container::const_iterator element_const_iterator;
-};
+}; // subset_traits
 
 
+/**
+ * \brief Class to generate in lexicographic order all subsets
+ *
+ * Given a set N={0,1,...,n-1} of n elements, this class iteratively generates
+ * all subset S of N, possibly included the empty set, in lexicographic order,
+ * that is, to generate a subset containing the i-th element we generate all
+ * subset containing the preceding 0,1,...(i-1)-th elements.
+ * For instance, for a set of 4 elements, the subset generation in lexicographic
+ * order produces the following sequence:
+ * <pre>
+ *  \emptyset,
+ *  {0},
+ *  {1},
+ *  {0,1},
+ *  {2},
+ *  {0,2},
+ *  {1,2},
+ *  {0,1,2},
+ *  {3},
+ *  {0,3},
+ *  {1,3},
+ *  {2,3},
+ *  {0,1,3},
+ *  {0,2,3}
+ *  {1,2,3},
+ *  {0,1,2,3}
+ * </pre>
+ *
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
+ */
 class lexicographic_subset
 {
 	public: class const_iterator;
@@ -78,8 +115,8 @@ class lexicographic_subset
 	: n_(n),
 	  empty_set_(empty_set),
 	  bits_(n, empty_set ? 0 : 1),
-	  has_prev_(true),
-	  has_next_(true)
+	  has_prev_(false),
+	  has_next_(n_ > 0 ? true : false)
 	{
 		DCS_ASSERT(n_ > 0,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
@@ -342,7 +379,25 @@ class lexicographic_subset
 }; // lexicographic_subset
 
 
-/*TODO
+/**
+ * \brief Class to generate in lexicographic order all subsets of a specific size
+ *
+ * Given a set N={0,1,...,n-1} of n elements, this class iteratively generates
+ * all subset S of N of size 0<=k<=n, in lexicographic order.
+ * For instance, for a set of 4 elements, the generation of subset of size 2 in
+ * lexicographic order produces the following sequence:
+ * <pre>
+ *  \emptyset,
+ *  {0,1},
+ *  {0,2},
+ *  {1,2},
+ *  {0,3},
+ *  {1,3},
+ *  {2,3}
+ * </pre>
+ *
+ * \author Marco Guazzone (marco.guazzone@gmail.com)
+ */
 class lexicographic_k_subset
 {
 	public: class const_iterator;
@@ -360,9 +415,9 @@ class lexicographic_k_subset
 	public: explicit lexicographic_k_subset(::std::size_t n, ::std::size_t k)
 	: n_(n),
 	  k_(k),
-	  bits_(n, 0),
-	  has_prev_(true),
-	  has_next_(true)
+	  bits_(n, (1 << k_)-1),
+	  has_prev_(false),
+	  has_next_(n_ > 0 && k_ > 0 ? true : false)
 	{
 		DCS_ASSERT(n_ > 0,
 				   DCS_EXCEPTION_THROW(::std::invalid_argument,
@@ -390,28 +445,22 @@ class lexicographic_k_subset
 
 		if (k_ > 0)
 		{
-			unsigned long min(0);
-			unsigned long max(~0);
-			for (::std::size_t i = 0; i < k_; ++i)
+			unsigned long v = bits_.to_ulong();
+
+			const unsigned long lo = v & ~(v - 1);       // lowest one bit
+			const unsigned long lz = (v + lo) & ~v;      // lowest zero bit above lo
+			v |= lz;                     // add lz to the set
+			v &= ~(lz - 1);              // reset bits below lz
+			v |= (lz / lo / 2) - 1;      // put back right number of bits at end
+
+			has_next_ = !(v & 1 << n_);
+
+			if (has_next_)
 			{
-				min <<= 1;
-				min += 1;
-				max >>= 1;
+				bits_ = impl_type(n_, v);
 			}
-			max ^= 1;
 
-			do
-			{
-				has_next_ = bits_.to_ulong() < max;
-
-				if (has_next_)
-				{
-					bits_ = impl_type(n_, bits_.to_ulong()+1);
-				}
-			}
-			while (bits_.count() != k_);
-
-			has_prev_ = bits_.to_ulong() > min;
+			has_prev_ = (bits_.to_ulong() != ((1 << k_)-1));
 		}
 
 		return *this;
@@ -430,28 +479,30 @@ class lexicographic_k_subset
 
 		if (k_ > 0)
 		{
-			unsigned long min(0);
-			unsigned long max(~0);
-			for (::std::size_t i = 0; i < k_; ++i)
+			const unsigned long w = bits_.to_ulong();
+			const unsigned long min = (1 << k_)-1;
+			unsigned long v = min;
+			unsigned long p = v;
+
+			while (v != w)
 			{
-				min <<= 1;
-				min += 1;
-				max >>= 1;
+				p = v;
+
+				const unsigned long lo = v & ~(v - 1);       // lowest one bit
+				const unsigned long lz = (v + lo) & ~v;      // lowest zero bit above lo
+				v |= lz;                     // add lz to the set
+				v &= ~(lz - 1);              // reset bits below lz
+				v |= (lz / lo / 2) - 1;      // put back right number of bits at end
 			}
-			max ^= 1;
 
-			do
-			{
-				has_prev_ = bits_.to_ulong() > min;
+			has_prev_ = (p != min) || (w != min);
 
-				if (has_prev_)
-				{
-					bits_ = impl_type(n_, bits_.to_ulong()-1);
-				}
-			}
-			while (bits_.count() != k_);
+//			if (has_prev_)
+//			{
+				bits_ = impl_type(n_, p);
+//			}
 
-			has_next_ = bits_.to_ulong() < min;
+			has_next_ = !(p & 1 << n_);
 		}
 
 		return *this;
@@ -642,12 +693,10 @@ class lexicographic_k_subset
 
 	private: ::std::size_t n_; ///< The number of elements of the set
 	private: ::std::size_t k_; ///< The max number of elements of the subset
-	private: bool empty_set_; ///< Flag to enable or disable the inclusion of the empty set
 	private: impl_type bits_; ///< The subset implementation
 	private: bool has_prev_;
 	private: bool has_next_;
 }; // lexicographic_k_subset
-*/
 
 
 template <typename CharT, typename CharTraitsT>
@@ -673,7 +722,6 @@ template <typename CharT, typename CharTraitsT>
 	return os;
 }
 
-/*
 template <typename CharT, typename CharTraitsT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os,
 													lexicographic_k_subset const& subset)
@@ -696,7 +744,6 @@ template <typename CharT, typename CharTraitsT>
 
 	return os;
 }
-*/
 
 template <typename BidiIterT, typename SubsetT>
 inline
@@ -731,6 +778,21 @@ prev_subset(BidiIterT first,
 
 	return subs;
 }
+
+/*
+inline
+::std::size_t count_subsets(n)
+{
+	const ::std::size_t m = n >> 1;
+	const bool flag = ((m << 1) - n) > 0;
+
+	::std::size_t c = 0;
+	for (std::size_t i = 0; i < m; ++i)
+	{
+		c += 
+	}
+}
+*/
 
 }} // Namespace dcs::algorithm
 
