@@ -460,7 +460,7 @@ class lexicographic_k_subset
 				bits_ = impl_type(n_, v);
 			}
 
-			has_prev_ = (bits_.to_ulong() != ((1 << k_)-1));
+			has_prev_ = (bits_.to_ulong() != static_cast<unsigned long>((1 << k_)-1));
 		}
 
 		return *this;
