@@ -28,6 +28,7 @@
 
 #include <cmath>
 #include <complex>
+#include <dcs/math/function/iszero.hpp>
 
 
 namespace dcs { namespace math {
@@ -55,13 +56,13 @@ T sign(T t);
 template <typename T>
 T sign(T t)
 {
-    if (t == 0)
+	if (iszero(t))
 	{
-    	return T(0);
+		return 0;
 	}
-    else
+	else
 	{
-    	return (t < 0) ? T(-1) : T(1);
+		return (t < 0) ? T(-1) : T(1);
 	}
 }
 
