@@ -5,8 +5,6 @@
  *
  * \author Marco Guazzone (marco.guazzone@gmail.com)
  *
- * \author Marco Guazzone (marco.guazzone@gmail.com)
- *
  * <hr/>
  *
  * Copyright 2012 Marco Guazzone (marco.guazzone@gmail.com)
