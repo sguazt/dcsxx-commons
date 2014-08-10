@@ -28,6 +28,12 @@
 #include <dcs/math/functional/approximately_equal.hpp>
 #include <dcs/math/functional/approximately_greater_equal.hpp>
 #include <dcs/math/functional/close_to.hpp>
-#include <dcs/math/functional/essentially_equal.hpp>
+//#include <dcs/math/functional/essentially_equal.hpp> //Don't include deprecated stuff
+#include <dcs/math/functional/definitely_greater.hpp>
+#include <dcs/math/functional/definitely_less.hpp>
+#include <dcs/math/functional/definitely_max.hpp>
+#include <dcs/math/functional/definitely_min.hpp>
+#include <dcs/math/functional/essentially_greater_equal.hpp>
+#include <dcs/math/functional/essentially_less_equal.hpp>
 
 #endif // DCS_MATH_FUNCTIONAL_HPP
