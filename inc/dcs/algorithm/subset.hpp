@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <boost/dynamic_bitset.hpp>
+#include <boost/math/special_functions/binomial.hpp>
 #include <cstddef>
 #include <dcs/assert.hpp>
 #include <dcs/debug.hpp>
@@ -123,6 +124,13 @@ class lexicographic_subset
 	public: ::std::size_t size() const
 	{
 		return bits_.count();
+	}
+
+	public: ::std::size_t count() const
+	{
+		const ::std::size_t c = 1 << n_; // 2^n
+
+		return empty_set_ ? (c-1) : c;
 	}
 
 	public: self_type& operator++()
@@ -427,6 +435,11 @@ class lexicographic_k_subset
 	public: ::std::size_t size() const
 	{
 		return bits_.count();
+	}
+
+	public: ::std::size_t count() const
+	{
+		return static_cast<std::size_t>(boost::math::binomial_coefficient<double>(n_, k_));
 	}
 
 	public: self_type& operator++()
