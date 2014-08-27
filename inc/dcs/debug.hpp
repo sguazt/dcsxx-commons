@@ -38,9 +38,11 @@
 #	include <cassert>
 #	include <iostream>
 #	include <iterator>
+# 	include <set>
 # 	include <sstream>
 # 	include <string>
 # 	include <typeinfo>
+# 	include <vector>
 
 /// Macro for telling whether we are in debug mode.
 # 	define DCS_DEBUG /**/
@@ -112,6 +114,60 @@ template <typename FwdItT>
 
     return oss.str();
 #else // DCS_DEBUG
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( first );
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( last );
+
+    return "";
+#endif // DCS_DEBUG
+}
+
+template <typename T>
+::std::string to_string(T const& t)
+{
+#ifdef DCS_DEBUG
+    ::std::ostringstream oss;
+	oss << t;
+    return oss.str();
+#else // DCS_DEBUG
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( t );
+
+    return "";
+#endif // DCS_DEBUG
+}
+
+template <typename T>
+::std::string to_string(::std::vector<T> const& v)
+{
+#ifdef DCS_DEBUG
+	//return to_string(v.begin(), v.end());
+	const std::size_t n = v.size();
+    ::std::ostringstream oss;
+	oss << "{";
+	for (std::size_t i = 0; i < n; ++i)
+	{
+		if (i > 0)
+		{
+			oss << ",";
+		}
+		oss << v[i];
+	}
+	oss << "]";
+	return oss.str();
+#else // DCS_DEBUG
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( v );
+
+    return "";
+#endif // DCS_DEBUG
+}
+
+template <typename T>
+::std::string to_string(::std::set<T> const& s)
+{
+#ifdef DCS_DEBUG
+	return to_string(s.begin(), s.end());
+#else // DCS_DEBUG
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( v );
+
     return "";
 #endif // DCS_DEBUG
 }
