@@ -125,8 +125,7 @@ static bool is_base64(::boost::uint8_t c)
 
 ::std::string base64_decode(::std::string const& encoded_string)
 {
-	const ::std::size_t in_len = encoded_string.size();
-
+	::std::size_t in_len = encoded_string.size();
 	::std::size_t i = 0;
 	::std::size_t j = 0;
 	::std::size_t k = 0;
