@@ -29,7 +29,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <dcs/assert.hpp>
-#include <dcs/assert.hpp>
+#include <dcs/math/type/base_array.hpp>
 #include <dcs/exception.hpp>
 #include <stdexcept>
 
