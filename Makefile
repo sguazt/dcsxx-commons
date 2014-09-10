@@ -74,7 +74,7 @@ export xmp_builddir := ./build
 export srcdirs := . #dcs dcs/config dcs/control dcs/math dcs/meta
 #export test_srcdirs := . dcs/des dcs/iterator dcs/math/la dcs/math/random dcs/math/stats dcs/util
 #export test_srcdirs := . dcs/algorithm dcs/iterator dcs/math/la dcs/math/random dcs/math/stats
-export test_srcdirs := . dcs/test dcs/test/algorithm dcs/test/iterator dcs/test/math dcs/test/math/curvefit dcs/test/math/random dcs/test/math/stats dcs/test/math/type dcs/test/system
+export test_srcdirs := . dcs/test dcs/test/algorithm dcs/test/iterator dcs/test/math dcs/test/math/curvefit dcs/test/math/optim dcs/test/math/random dcs/test/math/stats dcs/test/math/type dcs/test/system
 export xmp_srcdirs := . dcs/des dcs/des/simple_simulator dcs/des dcs/des/bank
 export libdirs :=
 export test_libdirs :=
@@ -116,7 +116,12 @@ CLEANER := rm -rf
 DOXYGEN := doxygen
 CXXFLAGS_common = -Wall -Wextra -ansi -pedantic -DBOOST_UBLAS_TYPE_CHECK=0 $(addprefix -I, $(incdirs)) -I$(libsdir)/include
 LDFLAGS_common = $(addprefix -L, $(libdirs)) -L$(libsdir)/lib $(addprefix -l,$(libs))
-CPPFLAGS += -MD
+#CPPFLAGS_common += -MD
+CXXFLAGS_common+=-DBOOST_THREAD_VERSION=4
+LDFLAGS_common+=-lboost_system -lboost_chrono -lboost_thread -lpthread -lrt
+LDFLAGS_common+=-lboost_iostreams
+CXXFLAGS_common+=$(shell xmlrpc-c-config c++2 client --cflags)
+LDFLAGS_common+=$(shell xmlrpc-c-config c++2 client --libs)
 
 
 ### FIXED SETTINGS
