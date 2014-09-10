@@ -27,7 +27,7 @@
 
 
 #if __cplusplus > 201103L
-// C++0x has bind
+// C++0x has 'round'
 #	include <cmath>
 #	define DCS_MATH_FUNCTION_ROUND_NS_ ::std
 #elif defined(__GNUC__)
