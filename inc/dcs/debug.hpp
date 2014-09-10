@@ -142,7 +142,7 @@ template <typename T>
 	//return to_string(v.begin(), v.end());
 	const std::size_t n = v.size();
     ::std::ostringstream oss;
-	oss << "{";
+	oss << "[";
 	for (std::size_t i = 0; i < n; ++i)
 	{
 		if (i > 0)
