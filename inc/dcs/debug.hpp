@@ -25,7 +25,7 @@
 #ifndef DCS_DEBUG_HPP
 #define DCS_DEBUG_HPP
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(DCS_NO_DEBUG)
 //@{ for C99 and C++0x
 //# 	include <cstdio>
 //# 	define DCS_DEBUG_WHERESTR_  "[file %s, function %s, line %d]: "
