@@ -101,10 +101,11 @@
 
 namespace dcs { namespace debug {
 
+#ifdef DCS_DEBUG
+
 template <typename FwdItT>
 ::std::string to_string(FwdItT first, FwdItT last)
 {
-#ifdef DCS_DEBUG
 	typedef typename ::std::iterator_traits<FwdItT>::value_type value_type;
 
     ::std::ostringstream oss;
@@ -113,32 +114,19 @@ template <typename FwdItT>
                 ::std::ostream_iterator<value_type>(oss, " "));
 
     return oss.str();
-#else // DCS_DEBUG
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( first );
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( last );
-
-    return "";
-#endif // DCS_DEBUG
 }
 
 template <typename T>
 ::std::string to_string(T const& t)
 {
-#ifdef DCS_DEBUG
     ::std::ostringstream oss;
 	oss << t;
     return oss.str();
-#else // DCS_DEBUG
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( t );
-
-    return "";
-#endif // DCS_DEBUG
 }
 
 template <typename T>
 ::std::string to_string(::std::vector<T> const& v)
 {
-#ifdef DCS_DEBUG
 	//return to_string(v.begin(), v.end());
 	const std::size_t n = v.size();
     ::std::ostringstream oss;
@@ -153,24 +141,34 @@ template <typename T>
 	}
 	oss << "]";
 	return oss.str();
-#else // DCS_DEBUG
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( v );
-
-    return "";
-#endif // DCS_DEBUG
 }
 
 template <typename T>
 ::std::string to_string(::std::set<T> const& s)
 {
-#ifdef DCS_DEBUG
 	return to_string(s.begin(), s.end());
+}
+
 #else // DCS_DEBUG
-	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( v );
+
+template <typename FwdItT>
+::std::string to_string(FwdItT first, FwdItT last)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( first );
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( last );
 
     return "";
-#endif // DCS_DEBUG
 }
+
+template <typename T>
+::std::string to_string(T const& t)
+{
+	DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING( t );
+
+    return "";
+}
+
+#endif // DCS_DEBUG
 
 }} // Namespace dcs::debug
 
