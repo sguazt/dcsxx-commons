@@ -84,15 +84,21 @@ inline void suppress_unused_variable_warning(T const&) {}
 /// - template <typename T> class DCS_MACRO_DECL_DEPRECATED(C { }, "Template class C is deprecated");
 /// - template <> class DCS_MACRO_DECL_DEPRECATED(C<int> { }, "Template specialization C<int> is deprecated");
 #ifdef DCS_MACRO_CXX14
+// See: http://josephmansfield.uk/articles/marking-deprecated-c++14.html
 # define DCS_MACRO_DECL_DEPRECATED(x,m) [[deprecated(m)]] x
 #else
 //# if defined(_WIN32) || defined(__HP_cc)
 # if defined(_MSC_VER)
 // If the compiler encounters the use of a deprecated identifier,
 // a C4996 warning is thrown
+// See: https://msdn.microsoft.com/en-us/library/044swk7y.aspx
 #  define DCS_MACRO_DECL_DEPRECATED(x,m) __declspec(deprecated(m)) x
 //# elif defined(__GNUC__) && defined(__linux__)
 # elif defined(__GNUC__)
+// See:
+// - https://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html
+// - https://gcc.gnu.org/onlinedocs/gcc/Variable-Attributes.html
+// - https://gcc.gnu.org/onlinedocs/gcc/Type-Attributes.html
 #  define DCS_MACRO_DECL_DEPRECATED(x,m) x __attribute__ ((deprecated(m)))
 //# elif defined(__SUNPRO_C)
 //#  define DCS_MACRO_DECL_DEPRECATED
