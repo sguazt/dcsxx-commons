@@ -70,19 +70,30 @@ inline void suppress_unused_variable_warning(T const&) {}
 /// Declares a function, a variable or a type declaration x as deprecated, and
 /// provides a suitable message m.
 /// Usage:
+/// - DCS_MACRO_DECL_DEPRECATED(extern int v, "Variable v is deprecated");
 /// - DCS_MACRO_DECL_DEPRECATED(int v, "Variable v is deprecated");
+/// - DCS_MACRO_DECL_DEPRECATED(int v, "Variable v is deprecated") = 0;
+/// - int DCS_MACRO_DECL_DEPRECATED(v, "Variable v is deprecated") = 0, z = 1;
 /// - DCS_MACRO_DECL_DEPRECATED(void f(int), "Function f is deprecated");
 /// - DCS_MACRO_DECL_DEPRECATED(void f(int) { }, "Function f is deprecated")
-/// - struct DCS_MACRO_DECL_DEPRECATED(S, "Struct S is deprecated") { };
+/// - void f (DCS_MACRO_DECL_DEPRECATED(int x, "Parameter x is deprecated")) { }
+/// - DCS_MACRO_DECL_DEPRECATED(typedef int I, "Type I is deprecated");
+/// - enum DCS_MACRO_DECL_DEPRECATED(E, "Enum E is deprecated") { };
+/// - struct DCS_MACRO_DECL_DEPRECATED(S, "Struct S is deprecated");
+/// - struct DCS_MACRO_DECL_DEPRECATED(S { }, "Struct S is deprecated");
+/// - template <typename T> class DCS_MACRO_DECL_DEPRECATED(C { }, "Template class C is deprecated");
+/// - template <> class DCS_MACRO_DECL_DEPRECATED(C<int> { }, "Template specialization C<int> is deprecated");
 #ifdef DCS_MACRO_CXX14
 # define DCS_MACRO_DECL_DEPRECATED(x,m) [[deprecated(m)]] x
 #else
 //# if defined(_WIN32) || defined(__HP_cc)
 # if defined(_MSC_VER)
-#  define DCS_MACRO_DECL_DEPRECATED(x,m) __declspec(deprecated) x
+// If the compiler encounters the use of a deprecated identifier,
+// a C4996 warning is thrown
+#  define DCS_MACRO_DECL_DEPRECATED(x,m) __declspec(deprecated(m)) x
 //# elif defined(__GNUC__) && defined(__linux__)
 # elif defined(__GNUC__)
-#  define DCS_MACRO_DECL_DEPRECATED(x,m) x __attribute__ ((deprecated))
+#  define DCS_MACRO_DECL_DEPRECATED(x,m) x __attribute__ ((deprecated(m)))
 //# elif defined(__SUNPRO_C)
 //#  define DCS_MACRO_DECL_DEPRECATED
 # else
