@@ -28,6 +28,7 @@
 
 namespace dcs { namespace macro { namespace detail {
 
+// See: http://herbsutter.com/2009/10/18/mailbag-shutting-up-compiler-warnings/
 template <typename T>
 inline void suppress_unused_variable_warning(T const&) {}
 
