@@ -32,7 +32,7 @@
 #	define DCS_MATH_FUNCTION_TRUNC_NS_ ::std
 #elif defined(__GNUC__)
 #	include <tr1/cmath>
-#	define DCS_MATH_FUNCTION_ROUND_NS_ ::std::tr1
+#	define DCS_MATH_FUNCTION_TRUNC_NS_ ::std::tr1
 #else
 #	include <dcs/detail/config/boost.hpp>
 // Use Boost TR1
