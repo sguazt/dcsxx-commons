@@ -43,6 +43,7 @@ namespace dcs { namespace math { namespace detail {
 /// - http://adtmag.com/articles/2000/03/16/comparing-floats-how-to-determine-if-floating-quantities-are-close-enough-once-a-tolerance-has-been.aspx
 /// - http://www.boost.org/doc/libs/1_47_0/libs/test/doc/html/utf/testing-tools/floating_point_comparison.html
 /// - http://learningcppisfun.blogspot.com/2010/04/comparing-floating-point-numbers.html
+/// - http://floating-point-gui.de/errors/comparison/
 /// .
 
 
@@ -65,9 +66,26 @@ typename ::boost::enable_if<
 	bool
 >::type approximately_equal(T x, T y, T tol)
 {
+	// Try first with standard comparison (handles the case when both x and y are zero)
+	if (x == y)
+	{
+		return true;
+	}
+
+	// Handle degenerate cases
 	if (::std::isnan(x) || ::std::isnan(y))
 	{
-		// According to IEEE, NaN are different event by itself
+		// According to IEEE, NaN are different even by itself
+		return false;
+	}
+	if (::std::isinf(x) && ::std::isinf(y))
+	{
+		// According to IEEE, Infinite operands of the same sign shall compare equal
+		return true;
+	}
+	if ((::std::isinf(x) && ::std::isfinite(y)) || (::std::isfinite(x) && ::std::isinf(y)))
+	{
+		// Infinity vs non-infinite operands are different
 		return false;
 	}
 
@@ -94,9 +112,25 @@ typename ::boost::enable_if<
 	bool
 >::type essentially_equal(T x, T y, T tol)
 {
+	// Try first with standard comparison (handles the case when both x and y are zero)
+	if (x == y)
+	{
+		return true;
+	}
+	// Handle degenerate cases
 	if (::std::isnan(x) || ::std::isnan(y))
 	{
-		// According to IEEE, NaN are different event by itself
+		// According to IEEE, NaN are different even by itself
+		return false;
+	}
+	if (::std::isinf(x) && ::std::isinf(y))
+	{
+		// According to IEEE, Infinite operands of the same sign shall compare equal
+		return true;
+	}
+	if ((::std::isinf(x) && ::std::isfinite(y)) || (::std::isfinite(x) && ::std::isinf(y)))
+	{
+		// Infinity vs non-infinite operands are different
 		return false;
 	}
 
@@ -123,6 +157,27 @@ typename ::boost::enable_if<
 	bool
 >::type definitely_greater(T x, T y, T tol)
 {
+	// Try first with standard comparison
+	if (x > y)
+	{
+		return true;
+	}
+
+	// Handle degenerate cases
+	if (::std::isnan(x) || ::std::isnan(y))
+	{
+		// According to IEEE, NaN are different even by itself
+		return false;
+	}
+	if (::std::isinf(x) && ::std::isfinite(y))
+	{
+		return true;
+	}
+	if (::std::isfinite(x) && ::std::isinf(y))
+	{
+		return false;
+	}
+
 	return (x-y) > (::std::max(::std::abs(x), ::std::abs(y))*tol);
 }
 
@@ -146,6 +201,27 @@ typename ::boost::enable_if<
 	bool
 >::type definitely_less(T x, T y, T tol)
 {
+	// Try first with standard comparison
+	if (x < y)
+	{
+		return true;
+	}
+
+	// Handle degenerate cases
+	if (::std::isnan(x) || ::std::isnan(y))
+	{
+		// According to IEEE, NaN are different even by itself
+		return false;
+	}
+	if (::std::isinf(x) && ::std::isfinite(y))
+	{
+		return false;
+	}
+	if (::std::isfinite(x) && ::std::isinf(y))
+	{
+		return true;
+	}
+
 	return (y-x) > (::std::max(::std::abs(x), ::std::abs(y))*tol);
 }
 
