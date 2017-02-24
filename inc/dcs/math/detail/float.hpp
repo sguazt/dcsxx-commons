@@ -44,6 +44,7 @@ namespace dcs { namespace math { namespace detail {
 /// - http://www.boost.org/doc/libs/1_47_0/libs/test/doc/html/utf/testing-tools/floating_point_comparison.html
 /// - http://learningcppisfun.blogspot.com/2010/04/comparing-floating-point-numbers.html
 /// - http://floating-point-gui.de/errors/comparison/
+/// - https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
 /// .
 
 
