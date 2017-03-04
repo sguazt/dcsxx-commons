@@ -130,7 +130,7 @@ class lexicographic_subset
 	{
 		const ::std::size_t c = 1 << n_; // 2^n
 
-		return empty_set_ ? (c-1) : c;
+		return empty_set_ ? c : (c-1);
 	}
 
 	public: self_type& operator++()
