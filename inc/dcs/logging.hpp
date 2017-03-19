@@ -31,6 +31,9 @@
 #include <string>
 
 
+#ifndef DCS_LOGGING_STREAM
+# define DCS_LOGGING_STREAM ::std::clog
+#endif // DCS_LOGGING_STREAM
 #define DCS_LOGGING_EXPAND_(x) x
 #define DCS_LOGGING_STRINGIFY_(x) #x
 #define DCS_LOGGING_TOSTRING_(x) DCS_LOGGING_STRINGIFY_(x)
@@ -65,7 +68,7 @@ namespace detail { namespace /*<unnamed>*/ { namespace logging {
 //inline
 //void log(T const& t)
 //{
-//	::std::clog << t << ::std::endl;
+//	DCS_LOGGING_STREAM << t << ::std::endl;
 //}
 //
 
@@ -99,11 +102,11 @@ void log(log_category cat, ::std::string const& at, ::std::string const& msg)
 
 	if (pos != ::std::string::npos)
 	{
-		::std::clog << "[" << to_string(cat) << ":" << at.substr(pos+1) << "] " << msg << ::std::endl;
+		DCS_LOGGING_STREAM << "[" << to_string(cat) << ":" << at.substr(pos+1) << "] " << msg << ::std::endl;
 	}
 	else
 	{
-		::std::clog << "[" << to_string(cat) << ":" << at << "] " << msg << ::std::endl;
+		DCS_LOGGING_STREAM << "[" << to_string(cat) << ":" << at << "] " << msg << ::std::endl;
 	}
 }
 
