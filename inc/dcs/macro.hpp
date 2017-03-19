@@ -65,6 +65,7 @@ inline void suppress_unused_variable_warning(T const&) {}
 #endif // DCS_MACRO_CXX114
 
 /// Suppresses the "unused variable" warning issued during compilation.
+// TODO: see also boost/core/ignore_used.hpp
 #define DCS_MACRO_SUPPRESS_UNUSED_VARIABLE_WARNING(x) \
 	::dcs::macro::detail::suppress_unused_variable_warning(x)
 
