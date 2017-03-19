@@ -46,26 +46,28 @@
 
 /// Macro for telling whether we are in debug mode.
 # 	define DCS_DEBUG /**/
+/// Macro for getting the underlying debug output stream.
+#	ifndef DCS_DEBUG_STREAM
+# 		define DCS_DEBUG_STREAM ::std::cerr
+#	endif // DCS_DEBUG_STREAM
 /// Macro for expanding its argument \c x
 #	define DCS_DEBUG_EXPAND__(x) x
 /// Macro for writing to standard error its argument \c x
 #	if !defined(DCS_DEBUG_LEVEL) || (DCS_DEBUG_LEVEL > 0)
-#		define DCS_DEBUG_TRACE(x) ::std::cerr << "[Debug (" << __FILE__ << ":" << __func__ << ":" << __LINE__ << ")>> " << DCS_DEBUG_EXPAND__(x) << ::std::endl;
+#		define DCS_DEBUG_TRACE(x) DCS_DEBUG_STREAM << "[Debug (" << __FILE__ << ":" << __func__ << ":" << __LINE__ << ")>> " << DCS_DEBUG_EXPAND__(x) << ::std::endl;
 #	else
 #		define DCS_DEBUG_TRACE(x) /**/
 #	endif // !defined(DCS_DEBUG_LEVEL) ...
 /// Macro for writing to standard error its argument \c x only if the debugging level is greater than or equal to \c l
 #	ifdef DCS_DEBUG_LEVEL
-#		define DCS_DEBUG_TRACE_L(l,x) if (DCS_DEBUG_EXPAND__(l) <= DCS_DEBUG_LEVEL) { ::std::cerr << "[Debug (" << __FILE__ << ":" << __func__ << ":" << __LINE__ << ")>> " << DCS_DEBUG_EXPAND__(x) << ::std::endl; }
+#		define DCS_DEBUG_TRACE_L(l,x) if (DCS_DEBUG_EXPAND__(l) <= DCS_DEBUG_LEVEL) { DCS_DEBUG_STREAM << "[Debug (" << __FILE__ << ":" << __func__ << ":" << __LINE__ << ")>> " << DCS_DEBUG_EXPAND__(x) << ::std::endl; }
 #	else
 #		define DCS_DEBUG_TRACE_L(l,x) DCS_DEBUG_TRACE(x)
 #	endif // DCS_DEBUG_LEVEL
 /// Macro for writing to standard error its argument \c x only if condition \c c is \c true
 #   define DCS_DEBUG_TRACE_IF(c,x) if ((c)) { DCS_DEBUG_TRACE(x); }
-/// Macro for getting the underlying debug output stream.
-# 	define DCS_DEBUG_STREAM ::std::cerr
 /// Macro for setting flags \c x of the underlying debug output stream.
-# 	define DCS_DEBUG_STREAM_SETFLAGS(x) ::std::cerr.setf((x))
+# 	define DCS_DEBUG_STREAM_SETFLAGS(x) DCS_DEBUG_STREAM.setf((x))
 /// Macro for converting the given argumento into a string.
 # 	define DCS_DEBUG_STRINGIFY(x) #x
 /// Macro for converting the a type into a string.
