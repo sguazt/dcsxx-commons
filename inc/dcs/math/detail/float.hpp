@@ -159,9 +159,9 @@ typename ::boost::enable_if<
 >::type definitely_greater(T x, T y, T tol)
 {
 	// Try first with standard comparison
-	if (x > y)
+	if (x <= y)
 	{
-		return true;
+		return false;
 	}
 
 	// Handle degenerate cases
@@ -203,9 +203,9 @@ typename ::boost::enable_if<
 >::type definitely_less(T x, T y, T tol)
 {
 	// Try first with standard comparison
-	if (x < y)
+	if (x >= y)
 	{
-		return true;
+		return false;
 	}
 
 	// Handle degenerate cases
