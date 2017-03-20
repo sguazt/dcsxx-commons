@@ -58,7 +58,7 @@ inline void suppress_unused_variable_warning(T const&) {}
 #endif // DCS_MACRO_CXX111
 
 /// Tells if we're compiling with a C++14 compatible compiler
-#if __cplusplus >= 201300L
+#if __cplusplus >= 201402L
 # define DCS_MACRO_CXX14
 #else
 # undef DCS_MACRO_CXX14
