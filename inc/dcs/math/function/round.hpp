@@ -50,6 +50,35 @@ using DCS_MATH_FUNCTION_ROUND_NS_::round;
 using DCS_MATH_FUNCTION_ROUND_NS_::roundf;
 using DCS_MATH_FUNCTION_ROUND_NS_::roundl;
 
+/**
+ * \brief Round the given value to the given precision.
+ *
+ * \param x The value to round.
+ * \param digits The number of decimal places to be used- Negative values are allowed (see details).
+ * \return The original value rounded to the given number of decimal places.
+ *
+ * Rounding to a negative number of digits means rounding to a power of ten, so for example `round(x, -2)` rounds to the nearest hundred.
+ *
+ * For instance:
+ *  roundp(0.1234567, 0) -> 0
+ *  roundp(0.1234567, 1) -> 0.1
+ *  roundp(0.1234567, 2) -> 0.12
+ *  roundp(0.1234567, 5) -> 0.12346
+ *  roundp(0.1234567, 6) -> 0.123457
+ *  roundp(123.4567, -1) -> 120
+ *  roundp(123.4567, -2) -> 100
+ *  roundp(123.4567, -3) -> 0
+ */
+template <typename RealT>
+RealT roundp(RealT x, int digits)
+{
+	x *= std::pow(10, digits);
+	x = round(x);
+	x /= std::pow(10, digits);
+
+	return x;
+}
+
 }} // Namespace dcs::math
 
 

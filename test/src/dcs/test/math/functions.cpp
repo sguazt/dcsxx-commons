@@ -32,6 +32,7 @@
 
 #include <dcs/math/function/bell.hpp>
 #include <dcs/math/function/clamp.hpp>
+#include <dcs/math/function/round.hpp>
 #include <dcs/test.hpp>
 
 
@@ -186,6 +187,27 @@ DCS_TEST_DEF( bell )
 	DCS_TEST_CHECK_REL_CLOSE( dcs::math::bell<double>(26), 49631246523618756274.0, tol );
 }
 
+DCS_TEST_DEF( round )
+{
+	DCS_TEST_CASE( "round" );
+
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(0.123456789, 0), 0.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(0.123456789, 1), 0.1, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(0.123456789, 2), 0.12, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(0.123456789, 3), 0.123, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(0.123456789, 4), 0.1235, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(0.123456789, 5), 0.12346, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(0.123456789, 6), 0.123457, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(0.123456789, 7), 0.1234568, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(0.123456789, 8), 0.12345679, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(0.123456789, 9), 0.123456789, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(0.123456789, 10), 0.123456789, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(123.456789,  0), 123.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(123.456789, -1), 120.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(123.456789, -2), 100.0, tol );
+	DCS_TEST_CHECK_REL_CLOSE( dcs::math::roundp(123.456789, -3), 0.0, tol );
+}
+
 
 int main()
 {
@@ -194,5 +216,6 @@ int main()
 	DCS_TEST_BEGIN();
 		DCS_TEST_DO( clamp );
 		DCS_TEST_DO( bell );
+		DCS_TEST_DO( round );
 	DCS_TEST_END();
 }
