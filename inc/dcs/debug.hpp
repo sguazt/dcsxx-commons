@@ -91,6 +91,9 @@
 /// debugging level is greater than or equal to \c l.
 #	define DCS_DEBUG_TRACE_L(l,x) /**/
 /// Macro for getting the underlying debug output stream.
+#	ifdef DCS_DEBUG_STREAM
+#		undef DCS_DEBUG_STREAM
+#	endif // DCS_DEBUG_STREAM
 # 	define DCS_DEBUG_STREAM /**/
 /// Macro for setting flags \c x of the underlying debug output stream.
 # 	define DCS_DEBUG_STREAM_SETFLAGS(x) /**/
