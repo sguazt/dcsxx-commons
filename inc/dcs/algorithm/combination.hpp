@@ -12,8 +12,17 @@
  * otherwise.
  *
  * Also see:
- * -# <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2639.pdf">N2639</a>
- * -# <a href="http://home.roadrunner.com/~hinnant/combinations.html">Combinations and Permutations</a>
+ * -# D. Knuth.
+ *    "The Art of Computer Programming, Volume 4, Fascicle 3,"
+ *    Addison-Wesley, 2004.
+ *	  [http://cs.utsa.edu/~wagner/knuth/fasc3a.pdf]
+ * -# Herve Bronnimann.
+ *    "Algorithms for permutations and combinations, with and without repetitions,"
+ *    C++ Standards Committee Papers JTC1/SC22/WG21, Number: N2639=08-0149, 2008.
+ *    [http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2639.pdf]
+ * -# Howard Hinnant.
+ *    "Combinations and Permutations."
+ *    [http://home.roadrunner.com/~hinnant/combinations.html"]
  * .
  *
  * \author Howard Hinnant (howard.hinnant@gmail.com)
