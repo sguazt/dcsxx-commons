@@ -79,14 +79,11 @@ typename ::boost::enable_if<
 		// According to IEEE, NaN are different even by itself
 		return false;
 	}
-	if (::std::isinf(x) && ::std::isinf(y))
+	if (::std::isinf(x) || ::std::isinf(y))
 	{
-		// According to IEEE, Infinite operands of the same sign shall compare equal
-		return true;
-	}
-	if ((::std::isinf(x) && ::std::isfinite(y)) || (::std::isfinite(x) && ::std::isinf(y)))
-	{
-		// Infinity vs non-infinite operands are different
+		// Possible cases:
+		// - infinity vs non-infinite operands are different
+		// - infinite operands of the opposite sign (which, according to IEEE, shall compare different)
 		return false;
 	}
 
@@ -124,14 +121,11 @@ typename ::boost::enable_if<
 		// According to IEEE, NaN are different even by itself
 		return false;
 	}
-	if (::std::isinf(x) && ::std::isinf(y))
+	if (::std::isinf(x) || ::std::isinf(y))
 	{
-		// According to IEEE, Infinite operands of the same sign shall compare equal
-		return true;
-	}
-	if ((::std::isinf(x) && ::std::isfinite(y)) || (::std::isfinite(x) && ::std::isinf(y)))
-	{
-		// Infinity vs non-infinite operands are different
+		// Possible cases:
+		// - infinity vs non-infinite operands are different
+		// - infinite operands of the opposite sign (which, according to IEEE, shall compare different)
 		return false;
 	}
 
@@ -159,9 +153,9 @@ typename ::boost::enable_if<
 >::type definitely_greater(T x, T y, T tol)
 {
 	// Try first with standard comparison
-	if (x <= y)
+	if (x > y)
 	{
-		return false;
+		return true;
 	}
 
 	// Handle degenerate cases
@@ -170,11 +164,7 @@ typename ::boost::enable_if<
 		// According to IEEE, NaN are different even by itself
 		return false;
 	}
-	if (::std::isinf(x) && ::std::isfinite(y))
-	{
-		return true;
-	}
-	if (::std::isfinite(x) && ::std::isinf(y))
+	if (::std::isinf(x) || ::std::isinf(y))
 	{
 		return false;
 	}
@@ -203,9 +193,9 @@ typename ::boost::enable_if<
 >::type definitely_less(T x, T y, T tol)
 {
 	// Try first with standard comparison
-	if (x >= y)
+	if (x < y)
 	{
-		return false;
+		return true;
 	}
 
 	// Handle degenerate cases
@@ -214,13 +204,9 @@ typename ::boost::enable_if<
 		// According to IEEE, NaN are different even by itself
 		return false;
 	}
-	if (::std::isinf(x) && ::std::isfinite(y))
+	if (::std::isinf(x) || ::std::isinf(y))
 	{
 		return false;
-	}
-	if (::std::isfinite(x) && ::std::isinf(y))
-	{
-		return true;
 	}
 
 	return (y-x) > (::std::max(::std::abs(x), ::std::abs(y))*tol);
