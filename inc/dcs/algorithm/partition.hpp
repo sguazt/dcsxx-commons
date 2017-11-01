@@ -89,14 +89,38 @@ class lexicographic_partition
 
 		if (!first)
 		{
+			// Initialize to last partition: (0 1 2 3 ...)
 			for (::std::size_t i = 1; i < n_; ++i)
 			{
-				kappa_[i] = i;
-				M_[i] = i;
+				kappa_[i] = M_[i] = i;
 			}
+			has_prev_ = true;
+			has_next_ = false;
 		}
 
 		DCS_DEBUG_DO( this->integrity_check() );
+	}
+
+	public: void reset(bool first = true)
+	{
+		if (first)
+		{
+			for (std::size_t i = 0; i < n_; ++i)
+			{
+				kappa_[i] = M_[i] = 0;
+			}
+			has_prev_ = false;
+			has_next_ = true;
+		}
+		else
+		{
+			for (std::size_t i = 0; i < n_; ++i)
+			{
+				kappa_[i] = M_[i] = i;
+			}
+			has_prev_ = true;
+			has_next_ = false;
+		}
 	}
 
 	public: ::std::size_t num_elements() const
@@ -371,14 +395,36 @@ class reverse_lexicographic_partition
 
 		if (first)
 		{
+			// Initialize to last partition: (0 1 2 3 ...)
 			for (::std::size_t i = 1; i < n_; ++i)
 			{
-				kappa_[i] = i;
-				M_[i] = i;
+				kappa_[i] = M_[i] = i;
 			}
 		}
 
 		DCS_DEBUG_DO( this->integrity_check() );
+	}
+
+	public: void reset(bool first = true)
+	{
+		if (first)
+		{
+			for (std::size_t i = 0; i < n_; ++i)
+			{
+				kappa_[i] = M_[i] = i;
+			}
+			has_prev_ = false;
+			has_next_ = true;
+		}
+		else
+		{
+			for (std::size_t i = 0; i < n_; ++i)
+			{
+				kappa_[i] = M_[i] = 0;
+			}
+			has_prev_ = true;
+			has_next_ = false;
+		}
 	}
 
 	public: ::std::size_t num_elements() const

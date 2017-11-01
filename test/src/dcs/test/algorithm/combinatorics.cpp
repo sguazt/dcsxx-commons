@@ -92,8 +92,27 @@ DCS_TEST_DEF( test_partition_class )
 		--part;
 	}
 
+	DCS_TEST_TRACE( "Test case: Partition - Class - reset" );
+
+	while (part.has_next())
+	{
+		++part;
+	}
+	part.reset();
+	while (part.has_next())
+	{
+		DCS_DEBUG_STREAM << part << " : " << part.num_subsets() << " : ";
+
+		dcs::algorithm::partition_traits<value_type>::subset_container subs = part(v.begin(), v.end());
+
+		DCS_DEBUG_STREAM << subs << ::std::endl;
+
+		++part;
+	}
+
 	DCS_TEST_TRACE( "Test case: Partition - Class - subsetting" );
 
+	part.reset();
 	while (part.has_next())
 	{
 		DCS_DEBUG_STREAM << part << " : " << part.num_subsets() << " : ";
@@ -388,8 +407,27 @@ DCS_TEST_DEF( test_reverse_partition_class )
 		--part;
 	}
 
+	DCS_TEST_TRACE( "Test case: Partition - Class - reset" );
+
+	while (part.has_next())
+	{
+		++part;
+	}
+	part.reset();
+	while (part.has_next())
+	{
+		DCS_DEBUG_STREAM << part << " : " << part.num_subsets() << " : ";
+
+		dcs::algorithm::partition_traits<value_type>::subset_container subs = part(v.begin(), v.end());
+
+		DCS_DEBUG_STREAM << subs << ::std::endl;
+
+		++part;
+	}
+
 	DCS_TEST_TRACE( "Test case: Reverse partition - Class - subsetting" );
 
+	part.reset();
 	while (part.has_next())
 	{
 		DCS_DEBUG_STREAM << part << " : " << part.num_subsets() << " : ";
