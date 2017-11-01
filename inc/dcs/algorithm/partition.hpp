@@ -9,9 +9,11 @@
  * -# M. Orlov.
  *    "Efficient Generation of Set Partitions"
  *    2002.
+ *    [https://www.informatik.uni-ulm.de/ni/Lehre/WS03/DMM/Software/partitions.pdf]
  * -# D. Knuth.
  *    "The Art of Computer Programming, Volume 4, Fascicle 3",
  *    Addison-Wesley, 2004.
+ *    [http://cs.utsa.edu/~wagner/knuth/fasc3b.pdf]
  * .
  *
  * \author Marco Guazzone (marco.guazzone@gmail.com)
@@ -70,6 +72,8 @@ class lexicographic_partition
 	public: typedef lexicographic_partition self_type;
 	public: typedef typename restricted_growth_string_type::iterator iterator;
 	public: typedef typename restricted_growth_string_type::const_iterator const_iterator;
+	public: typedef typename restricted_growth_string_type::reverse_iterator reverse_iterator;
+	public: typedef typename restricted_growth_string_type::const_reverse_iterator const_reverse_iterator;
 
 
 	public: explicit lexicographic_partition(::std::size_t n, bool first = true)
@@ -235,6 +239,62 @@ class lexicographic_partition
 		return kappa_.end();
 	}
 
+	public: const_iterator cbegin() const
+	{
+#if __cplusplus >= 201103L
+		return kappa_.cbegin();
+#else
+		return kappa_.begin();
+#endif // __cplusplus >= 201103L
+	}
+
+	public: const_iterator cend() const
+	{
+#if __cplusplus >= 201103L
+		return kappa_.cend();
+#else
+		return kappa_.end();
+#endif // __cplusplus >= 201103L
+	}
+
+	public: reverse_iterator rbegin()
+	{
+		return kappa_.rbegin();
+	}
+
+	public: reverse_iterator rend()
+	{
+		return kappa_.rend();
+	}
+
+	public: const_reverse_iterator rbegin() const
+	{
+		return kappa_.rbegin();
+	}
+
+	public: const_reverse_iterator rend() const
+	{
+		return kappa_.rend();
+	}
+
+	public: const_reverse_iterator crbegin() const
+	{
+#if __cplusplus >= 201103L
+		return kappa_.crbegin();
+#else
+		return kappa_.rbegin();
+#endif // __cplusplus >= 201103L
+	}
+
+	public: const_reverse_iterator crend() const
+	{
+#if __cplusplus >= 201103L
+		return kappa_.crend();
+#else
+		return kappa_.rend();
+#endif // __cplusplus >= 201103L
+	}
+
 	protected: reference operator*() const
 	{
 		return kappa_;
@@ -271,6 +331,288 @@ class lexicographic_partition
 template <typename CharT, typename CharTraitsT>
 ::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os,
 													lexicographic_partition const& part)
+{
+	os << '(';
+
+	if (part.num_elements() > 1)
+	{
+		::std::copy(part.begin(),
+					part.end()-1,
+					::std::ostream_iterator< ::std::size_t >(os, " "));
+	}
+
+	os << *(part.end()-1) << ')';
+
+	return os;
+}
+
+class reverse_lexicographic_partition
+{
+	protected: typedef ::std::vector< ::std::size_t > restricted_growth_string_type;
+	protected: typedef restricted_growth_string_type const& reference;
+	protected: typedef restricted_growth_string_type const* pointer;
+	public: typedef reverse_lexicographic_partition self_type;
+	public: typedef typename restricted_growth_string_type::iterator iterator;
+	public: typedef typename restricted_growth_string_type::const_iterator const_iterator;
+	public: typedef typename restricted_growth_string_type::reverse_iterator reverse_iterator;
+	public: typedef typename restricted_growth_string_type::const_reverse_iterator const_reverse_iterator;
+
+
+	public: explicit reverse_lexicographic_partition(::std::size_t n, bool first = true)
+	: n_(n),
+	  kappa_(n),
+	  M_(n),
+	  has_prev_(false),
+	  has_next_(true)
+	{
+		DCS_ASSERT(n_ > 0,
+				   DCS_EXCEPTION_THROW(::std::invalid_argument,
+									   "Number of elements must be positive"));
+
+		if (first)
+		{
+			for (::std::size_t i = 1; i < n_; ++i)
+			{
+				kappa_[i] = i;
+				M_[i] = i;
+			}
+		}
+
+		DCS_DEBUG_DO( this->integrity_check() );
+	}
+
+	public: ::std::size_t num_elements() const
+	{
+		return n_;
+	}
+
+	public: ::std::size_t num_subsets() const
+	{
+		return M_[n_-1]+1;
+	}
+
+	public: self_type& operator--()
+	{
+		DCS_ASSERT(has_prev_,
+				   DCS_EXCEPTION_THROW(::std::overflow_error,
+									   "No preceding partitions"));
+
+		// Check if #subsets == #elements, that is if we are in the case:
+		//   ((x1),(x2),...,(xn))
+		// NOTE: This works since this class builds partition in lexicographic order
+		has_prev_ = (M_[n_-1]+1) < n_;
+
+		for (::std::size_t i = n_-1; i > 0; --i)
+		{
+			if (kappa_[i] <= M_[i-1])
+			{
+				++kappa_[i];
+
+				const ::std::size_t new_max = ::std::max(M_[i], kappa_[i]);
+				M_[i] = new_max;
+				for (::std::size_t j = i + 1; j < n_; ++j)
+				{
+					kappa_[j] = 0;
+					M_[j] = new_max;
+				}
+
+				DCS_DEBUG_DO( integrity_check() );
+
+				// Since we are able to go forward by 1 step, surely, after
+				// this, we will also be able to go backward by 1 step
+				has_next_ = true;
+
+				break;
+			}
+		}
+
+		return *this;
+	}
+
+	public: bool has_prev() const
+	{
+		return has_prev_;
+	}
+
+	public: self_type& operator++()
+	{
+		DCS_ASSERT(has_next_,
+				   DCS_EXCEPTION_THROW(::std::underflow_error,
+									   "No following partitions"));
+
+		// Check if #subsets == 1, that is if we are in the case:
+		//   ((x1,x2,...,xn)
+		// NOTE: This works since this class builds partition in lexicographic order
+		has_next_ = (M_[n_-1]+1) > 1;
+
+		for (::std::size_t i = n_-1; i > 0; --i)
+		{
+			if (kappa_[i] > 0)
+			{
+				--kappa_[i];
+
+				const ::std::size_t m_i = M_[i-1];
+				M_[i] = m_i;
+				for (::std::size_t j = i + 1; j < n_; ++j)
+				{
+					const ::std::size_t new_max = m_i + j - i;
+					kappa_[j] = new_max;
+					M_[j] = new_max;
+				}
+
+				DCS_DEBUG_DO( integrity_check() );
+
+				// Since we are able to go backward by 1 step, surely, after
+				// this, we will also be able to go forward by 1 step
+				has_prev_ = true;
+
+				break;
+			}
+		}
+
+		return *this;
+	}
+
+	public: bool has_next() const
+	{
+		return has_next_;
+	}
+
+	public: template <typename ElemT>
+			typename partition_traits<ElemT>::subset_container operator()(::std::vector<ElemT> const& v) const
+	{
+		DCS_ASSERT(v.size() == n_,
+				   DCS_EXCEPTION_THROW(::std::invalid_argument,
+									   "Size does not match"));
+
+		typename partition_traits<ElemT>::subset_container subs(this->num_subsets());
+
+		for (::std::size_t i = 0; i < n_; ++i)
+		{
+			subs[kappa_[i]].push_back(v[i]);
+		}
+
+		return subs;
+	}
+
+	public: template <typename IterT>
+			typename partition_traits< typename ::std::iterator_traits<IterT>::value_type >::subset_container operator()(IterT first, IterT last) const
+	{
+		return this->operator()(::std::vector< typename ::std::iterator_traits<IterT>::value_type >(first, last));
+	}
+
+	public: iterator begin()
+	{
+		return kappa_.begin();
+	}
+
+	public: iterator end()
+	{
+		return kappa_.end();
+	}
+
+	public: const_iterator begin() const
+	{
+		return kappa_.begin();
+	}
+
+	public: const_iterator end() const
+	{
+		return kappa_.end();
+	}
+
+	public: const_iterator cbegin() const
+	{
+#if __cplusplus >= 201103L
+		return kappa_.cbegin();
+#else
+		return kappa_.begin();
+#endif // __cplusplus >= 201103L
+	}
+
+	public: const_iterator cend() const
+	{
+#if __cplusplus >= 201103L
+		return kappa_.cend();
+#else
+		return kappa_.end();
+#endif // __cplusplus >= 201103L
+	}
+
+	public: reverse_iterator rbegin()
+	{
+		return kappa_.rbegin();
+	}
+
+	public: reverse_iterator rend()
+	{
+		return kappa_.rend();
+	}
+
+	public: const_reverse_iterator rbegin() const
+	{
+		return kappa_.rbegin();
+	}
+
+	public: const_reverse_iterator rend() const
+	{
+		return kappa_.rend();
+	}
+
+	public: const_reverse_iterator crbegin() const
+	{
+#if __cplusplus >= 201103L
+		return kappa_.crbegin();
+#else
+		return kappa_.rbegin();
+#endif // __cplusplus >= 201103L
+	}
+
+	public: const_reverse_iterator crend() const
+	{
+#if __cplusplus >= 201103L
+		return kappa_.crend();
+#else
+		return kappa_.rend();
+#endif // __cplusplus >= 201103L
+	}
+
+	protected: reference operator*() const
+	{
+		return kappa_;
+	}
+
+	protected: pointer operator->() const
+	{
+		return &kappa_;
+	}
+
+	protected: void integrity_check() const
+	{
+		::std::size_t max = kappa_[0];
+
+		for (::std::size_t i = 0; i < n_; ++i)
+		{
+			max = ::std::max(max,kappa_[i]);
+
+			if (max != M_[i])
+			{
+				DCS_EXCEPTION_THROW(::std::domain_error, "Integrity check failed");
+			}
+		}
+	}
+
+
+	private: ::std::size_t n_;
+	private: restricted_growth_string_type kappa_;
+	private: restricted_growth_string_type M_;
+	private: bool has_prev_;
+	private: bool has_next_;
+}; // reverse_lexicographic_partition
+
+template <typename CharT, typename CharTraitsT>
+::std::basic_ostream<CharT,CharTraitsT>& operator<<(::std::basic_ostream<CharT,CharTraitsT>& os,
+													reverse_lexicographic_partition const& part)
 {
 	os << '(';
 
@@ -483,6 +825,24 @@ class lexicographic_k_partition
 	public: const_iterator end() const
 	{
 		return kappa_.end();
+	}
+
+	public: const_iterator cbegin() const
+	{
+#if __cplusplus >= 201103L
+		return kappa_.cbegin();
+#else
+		return kappa_.begin();
+#endif // __cplusplus >= 201103L
+	}
+
+	public: const_iterator cend() const
+	{
+#if __cplusplus >= 201103L
+		return kappa_.cend();
+#else
+		return kappa_.end();
+#endif // __cplusplus >= 201103L
 	}
 
 	protected: reference operator*() const
