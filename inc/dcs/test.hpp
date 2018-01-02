@@ -189,6 +189,25 @@ bool rel_close_to(::std::complex<T1> const& x, ::std::complex<T2> const& y, T3 t
 /// Concatenate its two \e string arguments \a x and \a y.
 #define DCS_TEST_STR_JOIN_(x,y) x ## y
 
+/**
+ * \brief Plug the context of this framework in the signature of a function.
+ *
+ * Example:
+ * ```
+ *   bool my_function(int arg1, double arg2, ..., char* argN, DCS_TEST_CONTEXT_FUNC_PARAM);
+ * ```
+ */
+#define DCS_TEST_CONTEXT_FUNC_PARAM ::std::size_t& test_fails__
+
+/**
+ * \brief Inserts the context of this framework in the call to a function.
+ *
+ * Example:
+ * ```
+ *   my_function(arg1, arg2, ..., argN, DCS_TEST_CONTEXT_FUNC_ARG);
+ * ```
+ */
+#define DCS_TEST_CONTEXT_FUNC_ARG test_fails__
 
 /// Define the name of the entire test suite.
 #define DCS_TEST_SUITE(m) ::std::clog << "--- Test Suite: " << DCS_TEST_PARAM_EXPAND_(m) << " ---" << ::std::endl;
