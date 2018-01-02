@@ -121,8 +121,15 @@ LDFLAGS_common = $(addprefix -L, $(libdirs)) -L$(libsdir)/lib $(addprefix -l,$(l
 CXXFLAGS_common+=-DBOOST_THREAD_VERSION=4
 LDFLAGS_common+=-lboost_system -lboost_chrono -lboost_thread -lpthread -lrt
 LDFLAGS_common+=-lboost_iostreams
-CXXFLAGS_common+=$(shell xmlrpc-c-config c++2 client --cflags)
-LDFLAGS_common+=$(shell xmlrpc-c-config c++2 client --libs)
+#FIXME (Dec 29, 2017 on Fedora 27, xmlrpc-c-1.49.02-2): xmlrpc-c-config seems broken so for now use pkg-config
+#CXXFLAGS_common+=$(shell xmlrpc-c-config c++2 client --cflags)
+#LDFLAGS_common+=$(shell xmlrpc-c-config c++2 client --libs)
+CXXFLAGS_common+=$(shell pkg-config xmlrpc++ --cflags)
+CXXFLAGS_common+=$(shell pkg-config xmlrpc_client++ --cflags)
+CXXFLAGS_common+=$(shell pkg-config xmlrpc_util++ --cflags)
+LDFLAGS_common+=$(shell pkg-config xmlrpc++ --libs)
+LDFLAGS_common+=$(shell pkg-config xmlrpc_client++ --libs)
+LDFLAGS_common+=$(shell pkg-config xmlrpc_util++ --libs)
 
 
 ### FIXED SETTINGS
